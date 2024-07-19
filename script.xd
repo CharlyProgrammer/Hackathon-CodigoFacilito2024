@@ -1,5 +1,5 @@
-1 & 6
-4 @5 & 6
-1 & 7 @ (3 ~ 10) 
-1 & 9
-~4 & krog @(3%7) 
+1 MAS 6
+4 POR 5 MAS 6
+1 MAS 7 POR (3 MENOS 10) 
+1 MAS 9
+MENOS4 MAS 8 POR(3entre7) 

@@ -1,5 +1,5 @@
 import src.source.Lexador as Lexador
-import os 
+import os
 comandos=[]
 
 
@@ -26,7 +26,7 @@ while True:
                 if error:
                     print(error.str_conv())
                 else:
-                    print(result) 
+                    print(result)     
                 
              
         

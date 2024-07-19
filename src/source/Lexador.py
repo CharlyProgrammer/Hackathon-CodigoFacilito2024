@@ -7,7 +7,7 @@ tokens = (
 '''
 import re
 import src.source.Parser as Parser
-#import Interprete
+import src.source.Interprete as Interprete
 from src.source.apuntador_errores import string_with_arrows
 #############################################
 # CONSTANTES
@@ -37,10 +37,14 @@ class ErrorElmIlegal(Error):
 class ErrorSintaxisInvalida(Error):
     def __init__(self, i_pos,f_pos,detalles):
         super().__init__(i_pos,f_pos,'Sintaxis Invalida', detalles)
+
+class ErrorTiempoEjecucion(Error):
+    def __init__(self, i_pos,f_pos,detalles):
+        super().__init__(i_pos,f_pos,'Error de ejecución', detalles)        
     
 
 #############################################
-# TOKENS
+# LOCALIZADOR DE POSICIONES
 ############################################
 
 class localizador:
@@ -127,7 +131,28 @@ class AnalizadorLexico:
             return Token(t_REAL,float(num_str),self.pos.lin+1,self.pos.col+1-len(num_str),self.pos,self.linea)
             
         
-           
+    def constr_str(self):
+        var_str=''
+        count_nn=0
+        while self.elm_actual!=None and re.match(r'[a-zA-Z0-9_]',self.elm_actual):
+            if re.match(r'[a-zA-Z_]',self.elm_actual):
+                count_nn+=1
+                var_str+=self.elm_actual
+            else:
+                var_str+=self.elm_actual   
+            self.mover()
+            if var_str.upper() in ('MAS','MENOS','POR','ENTRE'):
+                  break
+        
+            
+        if count_nn >0:
+            if var_str.upper()=='MAS': return Token(t_MAS,'MAS',self.pos.lin+1,self.pos.col+1,self.pos,self.linea)
+            elif var_str.upper()=='MENOS': return Token(t_MENOS,'MENOS',self.pos.lin+1,self.pos.col+1,self.pos,self.linea)
+            elif var_str.upper()=='POR': return Token(t_POR,'POR',self.pos.lin+1,self.pos.col+1,self.pos,self.linea)
+            elif var_str.upper()=='ENTRE': return Token(t_ENTRE,'ENTRE',self.pos.lin+1,self.pos.col+1,self.pos,self.linea)    
+            else:Token(t_VARIABLE,var_str,self.pos.lin+1,self.pos.col+1-len(var_str),self.pos,self.linea)  
+              
+                
         
        
     def constr_var(self):
@@ -141,6 +166,7 @@ class AnalizadorLexico:
                 var_str+=self.elm_actual   
             self.mover()
         if count_nn >0:
+            if var_str.upper()=='MAS': return Token(t_MAS,'MAS',self.pos.lin+1,self.pos.col+1,self.pos,self.linea)
             return Token(t_VARIABLE,var_str,self.pos.lin+1,self.pos.col+1-len(var_str),self.pos,self.linea)        
         
                                           
@@ -153,24 +179,11 @@ class AnalizadorLexico:
                 
                 self.mover()
             elif re.match(r'[a-zA-Z]',self.elm_actual):
-                tokens.append(self.constr_var())
+                tokens.append(self.constr_str())
                 
             elif self.elm_actual in digits:
                 tokens.append(self.constr_numero())
                   
-            elif self.elm_actual=='&':
-                tokens.append(Token(t_MAS,'&',self.pos.lin+1,self.pos.col+1,self.pos,self.linea))
-                self.mover()
-             
-            elif self.elm_actual=='~':
-                tokens.append(Token(t_MENOS,'~',self.pos.lin+1,self.pos.col+1,self.pos,self.linea))
-                self.mover()
-            elif self.elm_actual=='@':
-                tokens.append(Token(t_POR,'@',self.pos.lin+1,self.pos.col+1,self.pos,self.linea))
-                self.mover()        
-            elif self.elm_actual=='%':
-                tokens.append(Token(t_ENTRE,'%',self.pos.lin+1,self.pos.col+1,self.pos,self.linea))
-                self.mover()
             elif self.elm_actual=='(':
                 tokens.append(Token(t_IZQPAREN,'(',self.pos.lin+1,self.pos.col+1,self.pos,self.linea))
                 self.mover()
@@ -196,11 +209,11 @@ def run(FileName,instr,linea=None):
      # Parsear y generador de secuencias AST
     pars=Parser.parsear(tokens)
     ast=pars.parseo()
-    #if ast.error:return None, ast.error
+    if ast.error:return None, ast.error
     # EJECUTAR EL INTERPRETE
-    #inter=Interprete.Interprete()
-    #inter.visita(ast.nodo)
-    return ast.nodo,ast.error
-    #return tokens,error
+    inter=Interprete.Interprete()
+    res=inter.visita(ast.nodo)
+    #return ast.nodo,ast.error
+    return res.valor,res.error
     
             

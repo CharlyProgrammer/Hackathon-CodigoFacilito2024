@@ -2,14 +2,14 @@
 #         No NODOS
 ##################################
 import src.source.Lexador as Lexador
-class NumNodos:
+class NodoNum:
     def __init__(self,token):
         self.token=token
     
     def __repr__(self) -> str:
         return f'{self.token}'
     
-class Nodo:
+class NodoOp:
     def __init__(self,NodoIzq,TokOperador,NodoDer):
         self.NodoIzq=NodoIzq
         self.TokOperador=TokOperador
@@ -17,7 +17,7 @@ class Nodo:
     def __repr__(self) -> str:
         return f'({self.NodoIzq},{self.TokOperador},{self.NodoDer})' 
 
-class OpUnitarias:
+class NodoOpUnit:
     def __init__(self,TokOperador,Nodo):
         self.TokOperador=TokOperador
         self.Nodo=Nodo
@@ -87,7 +87,7 @@ class parsear:
             res.registro(self.recorrer())  
             der=res.registro(func())
             if res.error:return res.error
-            izq=Nodo(izq,tok_op,der)
+            izq=NodoOp(izq,tok_op,der)
           
         return res.exito(izq) 
         
@@ -101,11 +101,11 @@ class parsear:
             res.registro(self.recorrer())
             factor=res.registro(self.factor())
             if res.error: return res
-            return res.exito(OpUnitarias(tok,factor))
+            return res.exito(NodoOpUnit(tok,factor))
         
         elif tok.tipo in (Lexador.t_ENTERO,Lexador.t_REAL,Lexador.t_VARIABLE):
              res.registro(self.recorrer())
-             return res.exito(NumNodos(tok))
+             return res.exito(NodoNum(tok))
         elif tok.tipo in(Lexador.t_IZQPAREN):
             res.registro(self.recorrer())
             expr=res.registro(self.expresion())
