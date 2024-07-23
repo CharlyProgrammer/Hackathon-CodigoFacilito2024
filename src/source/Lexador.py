@@ -25,6 +25,7 @@ class Error:
         self.e_nombre=e_nombre
         self.detalles=detalles
     def str_conv(self):
+        
         resp=f'¡ERROR!\nArchivo <{self.f_pos.FileName}> en <Linea: {self.i_pos.lin + 1}, column: {self.i_pos.col + 1}>'
         resp+=f'\n---> Motivo: {self.e_nombre}, no se reconoce {self.detalles}'
         resp+='\n\n' + string_with_arrows(self.f_pos.FileTxt,self.i_pos,self.f_pos)
@@ -41,8 +42,9 @@ class ErrorSintaxisInvalida(Error):
 class ErrorTiempoEjecucion(Error):
     def __init__(self, i_pos,f_pos,detalles):
         super().__init__(i_pos,f_pos,'Error de ejecución', detalles)        
+        
     
-
+         
 #############################################
 # LOCALIZADOR DE POSICIONES
 ############################################
@@ -75,10 +77,14 @@ t_MAS ='MAS'
 t_MENOS ='MENOS'
 t_POR ='POR'
 t_ENTRE ='ENTRE'
+t_POT='POTENCIA' 
 t_IZQPAREN ='IZQPAREN'
 t_DERPAREN ='DERPAREN'
-t_VARIABLE='BOX'
-t_FDA='FDA'   
+t_ASIGNAR='ASIGNAR'
+t_VAR_IDEN='V_IDEN'
+t_PALABRA_CLAVE='P_CLAVE'
+t_FDA='FDA'
+PALABRAS_CLAVE=['BOX']  
 class Token:
     def __init__(self,tipo_,valor,ln,pos,loc,ln_s=None):
         self.tipo=tipo_ 
@@ -87,7 +93,9 @@ class Token:
         self.ln=ln
         self.loc=loc
         self.ln_s=ln_s
-        
+    
+    def comprobar(self,tipo_,valor):
+        return self.tipo==tipo_ and self.valor==valor    
            
     def __repr__(self) -> str:
         if self.ln_s!=None:
@@ -141,33 +149,27 @@ class AnalizadorLexico:
             else:
                 var_str+=self.elm_actual   
             self.mover()
-            if var_str.upper() in ('MAS','MENOS','POR','ENTRE'):
+            if var_str.upper() in ('MAS','MENOS','POR','ENTRE','ELEVADO'):
                   break
         
-            
+        tipo_tok=t_PALABRA_CLAVE if var_str.upper() in PALABRAS_CLAVE else t_VAR_IDEN
+           
         if count_nn >0:
             if var_str.upper()=='MAS': return Token(t_MAS,'MAS',self.pos.lin+1,self.pos.col+1,self.pos,self.linea)
             elif var_str.upper()=='MENOS': return Token(t_MENOS,'MENOS',self.pos.lin+1,self.pos.col+1,self.pos,self.linea)
             elif var_str.upper()=='POR': return Token(t_POR,'POR',self.pos.lin+1,self.pos.col+1,self.pos,self.linea)
-            elif var_str.upper()=='ENTRE': return Token(t_ENTRE,'ENTRE',self.pos.lin+1,self.pos.col+1,self.pos,self.linea)    
-            else:Token(t_VARIABLE,var_str,self.pos.lin+1,self.pos.col+1-len(var_str),self.pos,self.linea)  
-              
+            elif var_str.upper()=='ENTRE': return Token(t_ENTRE,'ENTRE',self.pos.lin+1,self.pos.col+1,self.pos,self.linea) 
+            elif var_str.upper()=='ELEVADO': return Token(t_POT,'ELEVADO',self.pos.lin+1,self.pos.col+1,self.pos,self.linea)    
+            else:
+                if tipo_tok==t_PALABRA_CLAVE:
+                    return Token(tipo_tok,var_str.upper(),self.pos.lin+1,self.pos.col+1-len(var_str),self.pos,self.linea)  
+                else:
+                    return Token(tipo_tok,var_str,self.pos.lin+1,self.pos.col+1-len(var_str),self.pos,self.linea) 
+                    
                 
         
        
-    def constr_var(self):
-        var_str=''
-        count_nn=0
-        while self.elm_actual!=None and re.match(r'[a-zA-Z0-9_]',self.elm_actual):
-            if re.match(r'[a-zA-Z_]',self.elm_actual):
-                count_nn+=1
-                var_str+=self.elm_actual
-            else:
-                var_str+=self.elm_actual   
-            self.mover()
-        if count_nn >0:
-            if var_str.upper()=='MAS': return Token(t_MAS,'MAS',self.pos.lin+1,self.pos.col+1,self.pos,self.linea)
-            return Token(t_VARIABLE,var_str,self.pos.lin+1,self.pos.col+1-len(var_str),self.pos,self.linea)        
+           
         
                                           
     def definir_tokens(self):
@@ -179,6 +181,7 @@ class AnalizadorLexico:
                 
                 self.mover()
             elif re.match(r'[a-zA-Z]',self.elm_actual):
+                
                 tokens.append(self.constr_str())
                 
             elif self.elm_actual in digits:
@@ -190,6 +193,10 @@ class AnalizadorLexico:
             elif self.elm_actual==')':
                 tokens.append(Token(t_DERPAREN,')',self.pos.lin+1,self.pos.col+1,self.pos,self.linea))
                 self.mover()
+            elif self.elm_actual==':':
+                tokens.append(Token(t_ASIGNAR,':',self.pos.lin+1,self.pos.col+1,self.pos,self.linea))
+                self.mover()
+                
             else:
                 init_pos=self.pos.copiar()
                 elem=self.elm_actual
@@ -198,7 +205,8 @@ class AnalizadorLexico:
         tokens.append(Token(t_FDA,'FDA',self.pos.lin+1,self.pos.col+1,self.pos,self.linea))                       
         return tokens, None
 
-
+global_tabla_simbol=Interprete.TabSimbol()
+global_tabla_simbol.set('Null',Interprete.Numero(0))
 
 
 def run(FileName,instr,linea=None):
@@ -207,11 +215,13 @@ def run(FileName,instr,linea=None):
     tokens,error=lex.definir_tokens()
     if error:return None, error
      # Parsear y generador de secuencias AST
+    #print(tokens) 
     pars=Parser.parsear(tokens)
     ast=pars.parseo()
     if ast.error:return None, ast.error
     # EJECUTAR EL INTERPRETE
-    inter=Interprete.Interprete()
+    inter=Interprete.Interprete(global_tabla_simbol)
+   
     res=inter.visita(ast.nodo)
     #return ast.nodo,ast.error
     return res.valor,res.error
