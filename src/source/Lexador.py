@@ -175,6 +175,7 @@ class AnalizadorLexico:
     def definir_tokens(self):
         
         tokens=[]
+        #print(self.elm_actual)
         while self.elm_actual !=None:
             
             if self.elm_actual in '\n\t ':

@@ -90,11 +90,11 @@ class parsear:
         if self.token_actual.comprobar(Lexador.t_PALABRA_CLAVE,'BOX'):
             res.registro(self.recorrer())
             if self.token_actual.tipo !=Lexador.t_VAR_IDEN:
-                res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos,self.token_actual.loc,', se esperaba una variable VAR_IDEN '))
+                res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.loc,self.token_actual.loc,', se esperaba una variable VAR_IDEN '))
             nom_var=self.token_actual
             res.registro(self.recorrer())   
             if self.token_actual.tipo !=Lexador.t_ASIGNAR:
-                res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos,self.token_actual.loc,', se esperaba un signo de asignacion "->" ')) 
+                res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.loc,self.token_actual.loc,', se esperaba un signo de asignacion "->" ')) 
             res.registro(self.recorrer())
             expr=res.registro(self.expresion())
             if res.error: return res

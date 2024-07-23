@@ -1,0 +1,7 @@
+* --> Pueden existir más de una operacion como Termino
+
+Expresion: Termino (MAS|MENOS Termino)* 
+
+Termino: Factor (POR|ENTRE Factor)* 
+
+Factor: ENTERO|REAL
