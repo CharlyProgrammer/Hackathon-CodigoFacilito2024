@@ -86,13 +86,18 @@ t_PALABRA_CLAVE='P_CLAVE'
 t_FDA='FDA'
 PALABRAS_CLAVE=['BOX']  
 class Token:
-    def __init__(self,tipo_,valor,ln,pos,loc,ln_s=None):
+    def __init__(self,tipo_,valor,ln,pos_ini=None,pos_fin=None,ln_s=None):
         self.tipo=tipo_ 
         self.valor=valor
-        self.pos=pos
         self.ln=ln
-        self.loc=loc
         self.ln_s=ln_s
+        if pos_ini:
+            self.pos_ini=pos_ini.copiar()
+            self.pos_fin=pos_ini.copiar()
+            self.pos_fin.mover()
+        if pos_fin:
+            self.pos_fin=pos_fin.copiar()    
+    
     
     def comprobar(self,tipo_,valor):
         return self.tipo==tipo_ and self.valor==valor    
@@ -125,6 +130,7 @@ class AnalizadorLexico:
     def constr_numero(self):
         num_str=''
         punto_cont=0
+        pos_ini=self.pos.copiar()
         while self.elm_actual!=None and self.elm_actual in digits+'.':
             if self.elm_actual =='.':
                 if punto_cont==1:break
@@ -134,14 +140,15 @@ class AnalizadorLexico:
                 num_str+=self.elm_actual
             self.mover()
         if punto_cont==0:
-            return Token(t_ENTERO,int(num_str),self.pos.lin+1,self.pos.col,self.pos,self.linea)
+            return Token(t_ENTERO,int(num_str),self.pos.lin+1,pos_ini,self.pos,self.linea)
         else:
-            return Token(t_REAL,float(num_str),self.pos.lin+1,self.pos.col+1-len(num_str),self.pos,self.linea)
+            return Token(t_REAL,float(num_str),self.pos.lin+1,pos_ini,self.pos,self.linea)
             
         
     def constr_str(self):
         var_str=''
         count_nn=0
+        pos_ini=self.pos.copiar()
         while self.elm_actual!=None and re.match(r'[a-zA-Z0-9_]',self.elm_actual):
             if re.match(r'[a-zA-Z_]',self.elm_actual):
                 count_nn+=1
@@ -155,16 +162,16 @@ class AnalizadorLexico:
         tipo_tok=t_PALABRA_CLAVE if var_str.upper() in PALABRAS_CLAVE else t_VAR_IDEN
            
         if count_nn >0:
-            if var_str.upper()=='MAS': return Token(t_MAS,'MAS',self.pos.lin+1,self.pos.col+1,self.pos,self.linea)
-            elif var_str.upper()=='MENOS': return Token(t_MENOS,'MENOS',self.pos.lin+1,self.pos.col+1,self.pos,self.linea)
-            elif var_str.upper()=='POR': return Token(t_POR,'POR',self.pos.lin+1,self.pos.col+1,self.pos,self.linea)
-            elif var_str.upper()=='ENTRE': return Token(t_ENTRE,'ENTRE',self.pos.lin+1,self.pos.col+1,self.pos,self.linea) 
-            elif var_str.upper()=='ELEVADO': return Token(t_POT,'ELEVADO',self.pos.lin+1,self.pos.col+1,self.pos,self.linea)    
+            if var_str.upper()=='MAS': return Token(t_MAS,'MAS',self.pos.lin+1,pos_ini,self.pos,self.linea)
+            elif var_str.upper()=='MENOS': return Token(t_MENOS,'MENOS',self.pos.lin+1,pos_ini,self.pos,self.linea)
+            elif var_str.upper()=='POR': return Token(t_POR,'POR',self.pos.lin+1,pos_ini,self.pos,self.linea)
+            elif var_str.upper()=='ENTRE': return Token(t_ENTRE,'ENTRE',self.pos.lin+1,pos_ini,self.pos,self.linea) 
+            elif var_str.upper()=='ELEVADO': return Token(t_POT,'ELEVADO',self.pos.lin+1,pos_ini,self.pos,self.linea)    
             else:
                 if tipo_tok==t_PALABRA_CLAVE:
-                    return Token(tipo_tok,var_str.upper(),self.pos.lin+1,self.pos.col+1-len(var_str),self.pos,self.linea)  
+                    return Token(tipo_tok,var_str.upper(),self.pos.lin+1,pos_ini,self.pos,self.linea)  
                 else:
-                    return Token(tipo_tok,var_str,self.pos.lin+1,self.pos.col+1-len(var_str),self.pos,self.linea) 
+                    return Token(tipo_tok,var_str,self.pos.lin+1,pos_ini,self.pos,self.linea) 
                     
                 
         
@@ -189,13 +196,13 @@ class AnalizadorLexico:
                 tokens.append(self.constr_numero())
                   
             elif self.elm_actual=='(':
-                tokens.append(Token(t_IZQPAREN,'(',self.pos.lin+1,self.pos.col+1,self.pos,self.linea))
+                tokens.append(Token(t_IZQPAREN,'(',self.pos.lin+1,pos_ini=self.pos,ln_s=self.linea))
                 self.mover()
             elif self.elm_actual==')':
-                tokens.append(Token(t_DERPAREN,')',self.pos.lin+1,self.pos.col+1,self.pos,self.linea))
+                tokens.append(Token(t_DERPAREN,')',self.pos.lin+1,pos_ini=self.pos,ln_s=self.linea))
                 self.mover()
             elif self.elm_actual==':':
-                tokens.append(Token(t_ASIGNAR,':',self.pos.lin+1,self.pos.col+1,self.pos,self.linea))
+                tokens.append(Token(t_ASIGNAR,':',self.pos.lin+1,pos_ini=self.pos,ln_s=self.linea))
                 self.mover()
                 
             else:
@@ -203,7 +210,7 @@ class AnalizadorLexico:
                 elem=self.elm_actual
                 self.mover()
                 return [], ErrorElmIlegal(init_pos,self.pos,'"'+ elem +'"')           
-        tokens.append(Token(t_FDA,'FDA',self.pos.lin+1,self.pos.col+1,self.pos,self.linea))                       
+        tokens.append(Token(t_FDA,'FDA',self.pos.lin+1,pos_ini=self.pos,ln_s=self.linea))                       
         return tokens, None
 
 global_tabla_simbol=Interprete.TabSimbol()

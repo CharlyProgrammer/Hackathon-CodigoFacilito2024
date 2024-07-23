@@ -16,7 +16,7 @@ class Interprete:
     def no_visita(self,nodo):
         raise Exception(f'No hay definido un metodo para peticiones o visitas, visit_{type(nodo).__name__}')
     def NodoNum_visita(self,nodo,):
-        return TEResultado().exito(Numero(nodo.token.valor).dar_posicion(nodo.token.loc,nodo.token.loc))
+        return TEResultado().exito(Numero(nodo.token.valor).dar_posicion(nodo.pos_ini,nodo.pos_fin))
     def NodoOp_visita(self,nodo):
         #print('Nodo de operaciones encontrado!')
         TERes=TEResultado()
@@ -36,7 +36,7 @@ class Interprete:
         if error: 
             return TERes.fracaso(error)
         else:
-            return TERes.exito(resul.dar_posicion(nodo.TokOperador.pos,nodo.TokOperador.pos+1))
+            return TERes.exito(resul.dar_posicion(nodo.pos_ini,nodo.pos_fin))
              
     def NodoOpUnit_visita(self,nodo):
         TERes=TEResultado()
@@ -50,7 +50,7 @@ class Interprete:
         if error:
             return TERes.fracaso(error)
         else:
-            return TERes.exito(num.dar_posicion(nodo.TokOperador.pos,nodo.TokOperador.pos+1))    
+            return TERes.exito(num.dar_posicion(nodo.pos_ini,nodo.pos_fin))    
     def NodoAccesoVar_visita(self,nodo):
         
         TERes=TEResultado()
@@ -59,7 +59,7 @@ class Interprete:
         valor=self.TabSim.get(n_var)
         
         if not valor:
-            return TERes.fracaso(lex.ErrorTiempoEjecucion(nodo.VarToken.loc,nodo.VarToken.loc,f'Variable {n_var} no esta definida'))
+            return TERes.fracaso(lex.ErrorTiempoEjecucion(nodo.pos_ini,nodo.pos_fin,f'Variable {n_var} no esta definida'))
         return TERes.exito(valor)
     
     def NodoAsigVar_visita(self,nodo):

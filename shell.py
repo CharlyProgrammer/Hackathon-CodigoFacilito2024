@@ -5,7 +5,7 @@ comandos=[]
 
 
 while True:
-    instr=input('MICHI>>> ')
+    instr=input('[IA-BITS]>>> ')
     
     if instr=='salir()':
         break
