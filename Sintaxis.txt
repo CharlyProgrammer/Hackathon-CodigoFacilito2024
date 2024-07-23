@@ -4,4 +4,10 @@ Expresion: Termino (MAS|MENOS Termino)*
 
 Termino: Factor (POR|ENTRE Factor)* 
 
-Factor: ENTERO|REAL
+Factor: (MAS|MENOS) Factor
+
+Potencia: Atomico (POTENCIA Factor)*
+
+Atomico: (ENTERO|REAL)
+       : IZQPAREN Expresion DERPAREN
+
