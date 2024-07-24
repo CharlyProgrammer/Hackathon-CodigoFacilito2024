@@ -1,13 +1,20 @@
 * --> Pueden existir más de una operacion como Termino
 
-Expresion: Termino (MAS|MENOS Termino)* 
+Expresion     : P_CLAVE: BOX VAR_IDEN ASIGNAR Expresion
+              : Exp-Comp ( (P_CLAVE: AND|P_CLAVE: OR|P_CLAVE: NAND|P_CLAVE: NOR|P_CLAVE: XOR) Exp-Comp)*
 
-Termino: Factor (POR|ENTRE Factor)* 
+Exp-Comp      : (P_CLAVE: NOT) Exp-Comp
+              : Exp-Aritm ((D_ASIGNAR|MAYOR_QUE|MAYOR_IGUAL|MENOR_QUE|MENOR_IGUAL) Exp-Aritm)*
 
-Factor: (MAS|MENOS) Factor
+Exp-Aritm     : Termino (MAS|MENOS Termino)* 
 
-Potencia: Atomico (POTENCIA Factor)*
+Termino       : Factor (POR|ENTRE Factor)* 
 
-Atomico: (ENTERO|REAL)
-       : IZQPAREN Expresion DERPAREN
+Factor        : (MAS|MENOS) Factor
+              : Potencia
+
+Potencia      : Atomico (POTENCIA Factor)*
+
+Atomico       : (ENTERO|REAL)
+              : IZQPAREN Expresion DERPAREN
 

@@ -32,7 +32,29 @@ class Interprete:
         elif nodo.TokOperador.tipo== lex.t_ENTRE:
             resul,error=izq.dividir_entre(der)
         elif nodo.TokOperador.tipo== lex.t_POT:
-            resul,error=izq.elevar_a(der)      
+            resul,error=izq.elevar_a(der)
+        elif nodo.TokOperador.tipo== lex.t_DOBLE_ASIGN:
+            resul,error=izq.llamar_comparacion_da(der)
+        elif nodo.TokOperador.tipo== lex.t_DIFERENTE:
+            resul,error=izq.llamar_comparacion_dif(der)     
+        elif nodo.TokOperador.tipo== lex.t_MAYOR_QUE:
+            resul,error=izq.llamar_comparacion_mayor(der) 
+        elif nodo.TokOperador.tipo== lex.t_MAYOR_IGUAL:
+            resul,error=izq.llamar_comparacion_mi(der) 
+        elif nodo.TokOperador.tipo== lex.t_MENOR_QUE:
+            resul,error=izq.llamar_comparacion_menor(der) 
+        elif nodo.TokOperador.tipo== lex.t_MENOR_IGUAL:
+            resul,error=izq.llamar_comparacion_meni(der)
+        elif nodo.TokOperador.comprobar(lex.t_PALABRA_CLAVE,'OR'):
+            resul,error=izq.op_or(der)     
+        elif nodo.TokOperador.comprobar(lex.t_PALABRA_CLAVE,'AND'):
+            resul,error=izq.op_and(der)
+        elif nodo.TokOperador.comprobar(lex.t_PALABRA_CLAVE,'NOR'):
+            resul,error=izq.op_nor(der)
+        elif nodo.TokOperador.comprobar(lex.t_PALABRA_CLAVE,'NAND'):
+            resul,error=izq.op_nand(der)   
+        elif nodo.TokOperador.comprobar(lex.t_PALABRA_CLAVE,'XOR'):
+            resul,error=izq.op_xor(der)                                              
         if error: 
             return TERes.fracaso(error)
         else:
@@ -47,6 +69,8 @@ class Interprete:
           
         if nodo.TokOperador.tipo== lex.t_MENOS:
             num,error=num.multiplicar_por(Numero(-1))
+        elif nodo.TokOperador.comprobar(lex.t_PALABRA_CLAVE,'NOT'):
+            num,error=num.negar()    
         if error:
             return TERes.fracaso(error)
         else:
@@ -165,6 +189,44 @@ class Numero:
         if isinstance(other,Numero):
             return Numero(self.valor ** other.valor),None    
     
+    def llamar_comparacion_da(self,other):
+        if isinstance(other,Numero):
+            return Numero(int(self.valor==other.valor)),None 
+    def llamar_comparacion_dif(self,other):
+        if isinstance(other,Numero):
+            return Numero(int(self.valor!=other.valor)),None    
+    def llamar_comparacion_mayor(self,other):
+        if isinstance(other,Numero):
+            return Numero(int(self.valor>other.valor)),None 
+    def llamar_comparacion_mi(self,other):
+        if isinstance(other,Numero):
+            return Numero(int(self.valor>=other.valor)),None 
+    def llamar_comparacion_menor(self,other):
+        if isinstance(other,Numero):
+            return Numero(int(self.valor<other.valor)),None     
+    def llamar_comparacion_meni(self,other):
+        if isinstance(other,Numero):
+            return Numero(int(self.valor<=other.valor)),None      
+    def op_or(self,other):
+        if isinstance(other,Numero):
+            return Numero(int(self.valor or other.valor)),None    
+    def op_and(self,other):
+        if isinstance(other,Numero):
+            return Numero(int(self.valor and other.valor)),None  
+    def negar(self):
+        return Numero(1 if self.valor==0 else 0), None
+              
+    def op_nand(self,other):
+        if isinstance(other,Numero):
+            return Numero(int(not(self.valor and other.valor))),None    
+    def op_nor(self,other):
+        if isinstance(other,Numero):
+            return Numero(int(not(self.valor or other.valor))),None    
+    def op_xor(self,other):
+        if isinstance(other,Numero):
+            A=self.valor
+            B=other.valor
+            return Numero(int((A and not(B))or(not(A) and B))),None    
     def __repr__(self) -> str:
         
         if re.match(r'-',str(self.valor) ):return 'MENOS '+str(self.valor*-1)

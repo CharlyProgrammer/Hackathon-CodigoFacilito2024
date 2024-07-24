@@ -113,12 +113,31 @@ class parsear:
             expr=res.registro(self.expresion())
             if res.error: return res
             return res.exito(NodoAsigVar(nom_var,expr))
-              
-        nodo= res.registro(self.op_binar(self.termino,(Lexador.t_MAS,Lexador.t_MENOS)))
+        #nodo= res.registro(self.op_binar(self.termino,(Lexador.t_MAS,Lexador.t_MENOS)))      
+        nodo= res.registro(self.op_binar(self.exp_comp,((Lexador.t_PALABRA_CLAVE,'AND'),(Lexador.t_PALABRA_CLAVE,'OR'),(Lexador.t_PALABRA_CLAVE,'NAND'),(Lexador.t_PALABRA_CLAVE,'NOR'),(Lexador.t_PALABRA_CLAVE,'XOR'))))
         if res.error:
             return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un elemento ENTERO, REAL, "BOX",operadores MAS, MENOS o IZQPAREN --> "("'))
         return res.exito(nodo)
-            
+    
+    def exp_comp(self):
+        res=resParse()
+        if self.token_actual.comprobar(Lexador.t_PALABRA_CLAVE,'NOT'):
+            tok_op=self.token_actual
+            res.registro_recorrer()
+            self.recorrer()
+            nodo=res.registro(self.exp_comp())
+            if res.error: return res
+            return res.exito(NodoOpUnit(tok_op,nodo))
+        nodo=res.registro(self.op_binar(self.exp_aritm,(Lexador.t_DOBLE_ASIGN,Lexador.t_DIFERENTE,Lexador.t_MAYOR_QUE,Lexador.t_MENOR_QUE,Lexador.t_MAYOR_IGUAL,Lexador.t_MENOR_IGUAL)))
+        if res.error:
+            return res.fracaso(Lexador.ErrorSintaxisInvalida(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un un elemento ENTERO, REAL, VAR_IDEN,operadores MAS, MENOS, "(" o NOT' )))
+        return res.exito(nodo)
+    
+    
+    def exp_aritm(self):
+        return self.op_binar(self.termino,(Lexador.t_MAS,Lexador.t_MENOS))
+        
+    
     def termino(self):
         
         return self.op_binar(self.factor,(Lexador.t_POR,Lexador.t_ENTRE))    
@@ -128,7 +147,7 @@ class parsear:
         res=resParse()
         izq=res.registro(func_A())
         if res.error:return res
-        while self.token_actual.tipo in ops:
+        while self.token_actual.tipo in ops or (self.token_actual.tipo, self.token_actual.valor) in ops:
             tok_op=self.token_actual
             res.registro_recorrer()
             self.recorrer()  
