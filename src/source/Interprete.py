@@ -33,6 +33,8 @@ class Interprete:
             resul,error=izq.dividir_entre(der)
         elif nodo.TokOperador.tipo== lex.t_POT:
             resul,error=izq.elevar_a(der)
+        elif nodo.TokOperador.tipo== lex.t_REST:
+            resul,error=izq.modulo(der)    
         elif nodo.TokOperador.tipo== lex.t_DOBLE_ASIGN:
             resul,error=izq.llamar_comparacion_da(der)
         elif nodo.TokOperador.tipo== lex.t_DIFERENTE:
@@ -97,7 +99,57 @@ class Interprete:
         if  TERes.error: return TERes
         self.TabSim.set(n_var,valor)
         return TERes.exito(valor)
+    def NodoIF_visita(self,nodo):
+        TERes=TEResultado()
+        for cond,expr in nodo.casos:
+            val_cond=TERes.registro(self.visita(cond))
+            if TERes.error: return TERes
+            if val_cond.comprobar_verdad():
+                val_expr=TERes.registro(self.visita(expr))
+                if TERes.error: return TERes
+                return TERes.exito(val_expr)
         
+        if nodo.caso_no:
+            val_expr_no=TERes.registro(self.visita(nodo.caso_no))
+            if TERes.error: return TERes
+            return TERes.exito(val_expr_no)    
+        
+        return TERes.exito(None)
+    
+    def NodoFOR_visita(self,nodo):
+        TERes=TEResultado()
+        val_ini=TERes.registro(self.visita(nodo.valor_var_ini))
+        if TERes.error: return TERes
+        val_limit=TERes.registro(self.visita(nodo.valor_var_fin))
+        if TERes.error: return TERes
+        if nodo.freq:
+            val_freq=TERes.registro(self.visita(nodo.freq))
+            if TERes.error: return TERes
+        else:
+            val_freq=Numero(1)
+            
+        i=val_ini.valor
+        
+        if val_freq.valor >=0:
+            clausula=lambda : i< val_limit.valor
+        else:
+            clausula=lambda : i> val_limit.valor
+        while clausula():
+            self.TabSim.set(nodo.tok_var.valor,Numero(i))
+            i+=val_freq.valor
+            TERes.registro(self.visita(nodo.nodo_bloq))
+            if TERes.error: return TERes
+        return TERes.exito(None)                
+            
+    def NodoWHILE_visita(self,nodo):
+        TERes=TEResultado()
+        while True:
+            clausula=TERes.registro(self.visita(nodo.nodo_cond))
+            if TERes.error: return TERes
+            if not clausula.comprobar_verdad():break
+            TERes.registro(self.visita(nodo.nodo_bloq))
+            if TERes.error: return TERes    
+        return TERes.exito(None)
 ########################################
 # TABLA DE SIMBOLOS
 ####################################
@@ -118,16 +170,7 @@ class TabSimbol:
     def quitar(self,n_var):
         del self.simbolos[n_var]    
         
-########################################
-# CONTEXTO
-####################################        
-        
-class contexto:
-    def __init__(self,mostrar_nombre,padre=None,pos_ent_padre=None) :
-        self.mostrar_nombre=mostrar_nombre
-        self.padre=padre
-        self.pos_ent_padre=pos_ent_padre        
-########################################
+#######################################
 # EJECUCIÓN DE RESULTADOS
 ####################################
 
@@ -189,6 +232,11 @@ class Numero:
         if isinstance(other,Numero):
             return Numero(self.valor ** other.valor),None    
     
+    def modulo(self,other):
+        if isinstance(other,Numero):
+            return Numero(self.valor % other.valor),None 
+    
+    
     def llamar_comparacion_da(self,other):
         if isinstance(other,Numero):
             return Numero(int(self.valor==other.valor)),None 
@@ -226,7 +274,11 @@ class Numero:
         if isinstance(other,Numero):
             A=self.valor
             B=other.valor
-            return Numero(int((A and not(B))or(not(A) and B))),None    
+            return Numero(int((A and not(B))or(not(A) and B))),None  
+        
+    def comprobar_verdad(self):
+        return self.valor !=0
+              
     def __repr__(self) -> str:
         
         if re.match(r'-',str(self.valor) ):return 'MENOS '+str(self.valor*-1)

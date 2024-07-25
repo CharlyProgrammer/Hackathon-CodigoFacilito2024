@@ -1,20 +1,28 @@
 * --> Pueden existir más de una operacion como Termino
 
-Expresion     : P_CLAVE: BOX VAR_IDEN ASIGNAR Expresion
-              : Exp-Comp ( (P_CLAVE: AND|P_CLAVE: OR|P_CLAVE: NAND|P_CLAVE: NOR|P_CLAVE: XOR) Exp-Comp)*
+Expresion       :   P_CLAVE: BOX VAR_IDEN ASIGNAR Expresion
+                :   Exp-Comp ( (P_CLAVE: AND|P_CLAVE: OR|P_CLAVE: NAND|P_CLAVE: NOR|P_CLAVE: XOR) Exp-Comp)*
 
-Exp-Comp      : (P_CLAVE: NOT) Exp-Comp
-              : Exp-Aritm ((D_ASIGNAR|MAYOR_QUE|MAYOR_IGUAL|MENOR_QUE|MENOR_IGUAL) Exp-Aritm)*
+Exp-Comp        :   (P_CLAVE: NOT) Exp-Comp
+                :   Exp-Aritm ((D_ASIGNAR|MAYOR_QUE|MAYOR_IGUAL|MENOR_QUE|MENOR_IGUAL) Exp-Aritm)*
 
-Exp-Aritm     : Termino (MAS|MENOS Termino)* 
+Exp-Aritm       :   Termino (MAS|MENOS Termino)* 
 
-Termino       : Factor (POR|ENTRE Factor)* 
+Termino         :   Factor (POR|ENTRE Factor)* 
 
-Factor        : (MAS|MENOS) Factor
-              : Potencia
+Factor          :   (MAS|MENOS) Factor
+                :   Potencia
 
-Potencia      : Atomico (POTENCIA Factor)*
+Potencia        :   Atomico (POTENCIA Factor)*
 
-Atomico       : (ENTERO|REAL)
-              : IZQPAREN Expresion DERPAREN
+Atomico         :   (ENTERO|REAL)
+                :   IZQPAREN Expresion DERPAREN
 
+IF-exp          :   P_CLAVE: WHEN Expresion P_CLAVE: DO
+                :   (P_CLAVE: OTHER-WHEN Expresion P_CLAVE: DO Expresion)*
+                :   (P_CLAVE: OTHER-CASE Expresion)?
+
+FOR-expr:       :   P_CLAVE: WHEEL VAR_IDEN ASIGNAR Expresion, (P_CLAVE: FREQ Expresion)?, 
+                    P_CLAVE: LIMIT Expresion P_CLAVE: DO Expresion
+
+WHILE-expr      :   P_CLAVE: WHEEL-WHILE Expresion P_CLAVE: DO Expresion

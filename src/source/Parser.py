@@ -42,7 +42,35 @@ class NodoAsigVar:
         self.VarToken=VarToken
         self.valor=valor
         self.pos_ini=self.VarToken.pos_ini
-        self.pos_fin=self.valor.pos_fin             
+        self.pos_fin=self.valor.pos_fin  
+        
+# Nodos para estructuras WHEN - WHEEL        
+
+class NodoIF:
+    def __init__(self,casos,casos_no):
+        self.casos=casos
+        self.caso_no=casos_no
+        self.pos_ini=self.casos[0][0].pos_ini
+        self.pos_fin=(self.caso_no or self.casos[len(self.casos)-1][0]).pos_fin
+        
+class NodoFOR:
+    def __init__(self,tok_var,valor_var_ini,valor_var_fin, freq,nodo_bloq):
+        self.tok_var=tok_var
+        self.valor_var_ini= valor_var_ini
+        self.valor_var_fin= valor_var_fin
+        self.freq= freq
+        self.nodo_bloq= nodo_bloq                    
+        
+        self.pos_ini=self.tok_var.pos_ini
+        self.pos_fin=self.nodo_bloq.pos_fin 
+        
+class NodoWHILE:
+    def __init__(self,nodo_cond,nodo_bloq):
+        self.nodo_cond= nodo_cond
+        self.nodo_bloq= nodo_bloq
+        
+        self.pos_ini=self.nodo_cond.pos_ini
+        self.pos_fin=self.nodo_bloq.pos_fin 
     
 #############################
 #         RES PARSEADOR
@@ -52,11 +80,12 @@ class resParse():
     def __init__(self) -> None:
         self.error=None
         self.nodo=None
-        
+        self.cont_avance = 0
     def registro_recorrer(self):
-        pass
+        self.cont_avance+=1
             
     def registro(self,res):
+        self.cont_avance += res.cont_avance
         if res.error:
             self.error=res.error
         return res.nodo    
@@ -67,7 +96,8 @@ class resParse():
         return self
     
     def fracaso(self,error):
-        self.error=error
+        if not self.error or self.cont_avance==0:
+            self.error=error
         return self
         
     
@@ -91,7 +121,7 @@ class parsear:
         res=self.expresion()
         if not res.error and self.token_actual.tipo !=Lexador.t_FDA:
            
-           res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,", se esperaba un elemento 'MAS', 'MENOS', 'POR', 'ENTRE' o 'ELEVADO' "))
+           res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,", se esperaba un OPERADOR ARITMETICO, DE COMPARACIÓN o LÓGICO VALIDO '"))
         return res
     
     
@@ -116,7 +146,7 @@ class parsear:
         #nodo= res.registro(self.op_binar(self.termino,(Lexador.t_MAS,Lexador.t_MENOS)))      
         nodo= res.registro(self.op_binar(self.exp_comp,((Lexador.t_PALABRA_CLAVE,'AND'),(Lexador.t_PALABRA_CLAVE,'OR'),(Lexador.t_PALABRA_CLAVE,'NAND'),(Lexador.t_PALABRA_CLAVE,'NOR'),(Lexador.t_PALABRA_CLAVE,'XOR'))))
         if res.error:
-            return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un elemento ENTERO, REAL, "BOX",operadores MAS, MENOS o IZQPAREN --> "("'))
+            return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un ENTERO, REAL, DECLARACION CON "BOX",operadores ARITMETICOS, LOGICOS,(),WHEN o WHEEL'))
         return res.exito(nodo)
     
     def exp_comp(self):
@@ -130,7 +160,7 @@ class parsear:
             return res.exito(NodoOpUnit(tok_op,nodo))
         nodo=res.registro(self.op_binar(self.exp_aritm,(Lexador.t_DOBLE_ASIGN,Lexador.t_DIFERENTE,Lexador.t_MAYOR_QUE,Lexador.t_MENOR_QUE,Lexador.t_MAYOR_IGUAL,Lexador.t_MENOR_IGUAL)))
         if res.error:
-            return res.fracaso(Lexador.ErrorSintaxisInvalida(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un un elemento ENTERO, REAL, VAR_IDEN,operadores MAS, MENOS, "(" o NOT' )))
+            return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un un elemento ENTERO, REAL, VAR_IDEN,operadores MAS, MENOS, "(" o NOT' ))
         return res.exito(nodo)
     
     
@@ -140,7 +170,7 @@ class parsear:
     
     def termino(self):
         
-        return self.op_binar(self.factor,(Lexador.t_POR,Lexador.t_ENTRE))    
+        return self.op_binar(self.factor,(Lexador.t_POR,Lexador.t_ENTRE,Lexador.t_REST))    
     def op_binar(self,func_A,ops,func_B=None):
         if func_B==None:
             func_B=func_A
@@ -184,6 +214,22 @@ class parsear:
             else:
                 
                 return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un elemento DERPAREN --> ")" '))
+        
+        elif tok.comprobar(Lexador.t_PALABRA_CLAVE,'WHEN'):
+            if_expr=res.registro(self.if_expr())
+            if res.error: return res
+            return res.exito(if_expr)
+        
+        elif tok.comprobar(Lexador.t_PALABRA_CLAVE,'WHEEL'):
+            for_expr=res.registro(self.for_expr())
+            if res.error: return res
+            return res.exito(for_expr) 
+        
+        elif tok.comprobar(Lexador.t_PALABRA_CLAVE,'WHEEL-WHILE'):
+            while_expr=res.registro(self.while_expr())
+            if res.error: return res
+            return res.exito(while_expr) 
+        
         return res.fracaso(Lexador.ErrorSintaxisInvalida(tok.pos_ini,tok.pos_fin,', se esperaba un elemento ENTERO, REAL, VAR_IDEN, operadores MAS,MENOS o IZQPAREN --> "("'))        
                     
     
@@ -200,4 +246,141 @@ class parsear:
         
         return self.potencia()
     
-                 
+    def if_expr(self):
+        res=resParse()
+        casos=[]
+        casos_no= None
+        
+        if not self.token_actual.comprobar(Lexador.t_PALABRA_CLAVE,'WHEN'):
+            return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un WHEN')) 
+        res.registro_recorrer()
+        self.recorrer()
+        clausula=res.registro(self.expresion())    
+        if res.error: return res
+        if not self.token_actual.comprobar(Lexador.t_PALABRA_CLAVE,'DO'):
+            return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un DO')) 
+        res.registro_recorrer()
+        self.recorrer()
+        if self.token_actual.tipo !=Lexador.t_IZQBLOQ:
+            return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un <')) 
+        res.registro_recorrer()
+        self.recorrer()
+        expr_if=res.registro(self.expresion()) 
+        if res.error: return res
+        casos.append((clausula,expr_if)) 
+        if self.token_actual.tipo !=Lexador.t_DERBLOQ:
+            return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un >')) 
+        res.registro_recorrer()
+        self.recorrer()
+        while self.token_actual.comprobar(Lexador.t_PALABRA_CLAVE,'OTHER-WHEN'):
+            res.registro_recorrer()
+            self.recorrer()
+            clausula=res.registro(self.expresion())
+            if res.error: return res
+            if not self.token_actual.comprobar(Lexador.t_PALABRA_CLAVE,'DO'):
+                return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un DO')) 
+            res.registro_recorrer()
+            self.recorrer()
+            if self.token_actual.tipo !=Lexador.t_IZQBLOQ:
+                return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un <')) 
+            res.registro_recorrer()
+            self.recorrer()
+            expr_if=res.registro(self.expresion()) 
+            if res.error: return res
+            casos.append((clausula,expr_if)) 
+            if self.token_actual.tipo !=Lexador.t_DERBLOQ:
+                return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un >')) 
+            res.registro_recorrer()
+            self.recorrer()
+        if self.token_actual.comprobar(Lexador.t_PALABRA_CLAVE,'OTHER-CASE'):
+            res.registro_recorrer()
+            self.recorrer()
+            if self.token_actual.tipo !=Lexador.t_IZQBLOQ:
+                return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un <')) 
+      
+            res.registro_recorrer()
+            self.recorrer()
+            casos_no=res.registro(self.expresion()) 
+            if res.error: return res
+        
+        if self.token_actual.tipo !=Lexador.t_DERBLOQ:
+            return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un >')) 
+        res.registro_recorrer()
+        self.recorrer()    
+            
+        return res.exito(NodoIF(casos,casos_no))
+    def for_expr(self):
+        res=resParse()
+        if not self.token_actual.comprobar(Lexador.t_PALABRA_CLAVE,'WHEEL'):
+            return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un WHEEL')) 
+        res.registro_recorrer()
+        self.recorrer()
+        if self.token_actual.tipo !=Lexador.t_VAR_IDEN:
+            return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba una variable, VAR_IDEN')) 
+        nom_var=self.token_actual
+        res.registro_recorrer()
+        self.recorrer()
+        if self.token_actual.tipo !=Lexador.t_ASIGNAR:
+            return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba signo de asignacion, ":"')) 
+        res.registro_recorrer()
+        self.recorrer()
+        
+        val_ini=res.registro(self.expresion())
+        if res.error: return res
+        if not self.token_actual.comprobar(Lexador.t_PALABRA_CLAVE,'LIMIT'):
+            return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un LIMIT')) 
+        res.registro_recorrer()
+        self.recorrer()
+        val_lim=res.registro(self.expresion())
+        if res.error: return res 
+        if self.token_actual.comprobar(Lexador.t_PALABRA_CLAVE,'FREQ'):
+            res.registro_recorrer()
+            self.recorrer()
+            val_freq=res.registro(self.expresion())
+            if res.error: return res
+        else:
+            val_freq=None
+        
+        if not self.token_actual.comprobar(Lexador.t_PALABRA_CLAVE,'DO'):
+            return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un DO')) 
+        res.registro_recorrer()
+        self.recorrer()
+        
+        if self.token_actual.tipo !=Lexador.t_IZQBLOQ:
+                return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un <')) 
+        res.registro_recorrer()
+        self.recorrer() 
+        expr_bloq= res.registro(self.expresion())     
+        if res.error: return res
+        if self.token_actual.tipo !=Lexador.t_DERBLOQ:
+            return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un >')) 
+        res.registro_recorrer()
+        self.recorrer()
+        return res.exito(NodoFOR(nom_var,val_ini,val_lim,val_freq,expr_bloq)) 
+    
+    def while_expr(self):
+        res=resParse()
+        if not self.token_actual.comprobar(Lexador.t_PALABRA_CLAVE,'WHEEL-WHILE'):
+            return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un WHEEL-WHILE')) 
+        res.registro_recorrer()
+        self.recorrer()
+        cond_expr=res.registro(self.expresion())
+        if res.error: return res
+                
+        if not self.token_actual.comprobar(Lexador.t_PALABRA_CLAVE,'DO'):
+            return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un DO')) 
+        res.registro_recorrer()
+        self.recorrer()
+        
+        if self.token_actual.tipo !=Lexador.t_IZQBLOQ:
+                return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un <')) 
+        res.registro_recorrer()
+        self.recorrer() 
+        expr_bloq= res.registro(self.expresion())     
+        if res.error: return res
+        if self.token_actual.tipo !=Lexador.t_DERBLOQ:
+            return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un >')) 
+        res.registro_recorrer()
+        self.recorrer()
+        return res.exito(NodoWHILE(cond_expr,expr_bloq)) 
+         

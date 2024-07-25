@@ -77,9 +77,12 @@ t_MAS ='MAS'
 t_MENOS ='MENOS'
 t_POR ='POR'
 t_ENTRE ='ENTRE'
-t_POT='POTENCIA' 
+t_POT='POTENCIA'
+t_REST='RESTO' 
 t_IZQPAREN ='IZQPAREN'
 t_DERPAREN ='DERPAREN'
+t_IZQBLOQ ='IZQBLOQ'
+t_DERBLOQ ='DERBLOQ'
 t_ASIGNAR='ASIGNAR'
 t_DOBLE_ASIGN='D_ASIGNAR'
 t_DIFERENTE='DIFERENTE'
@@ -91,7 +94,21 @@ t_MENOR_IGUAL='MENOR_IGUAL'
 t_VAR_IDEN='V_IDEN'
 t_PALABRA_CLAVE='P_CLAVE'
 t_FDA='FDA'
-PALABRAS_CLAVE=['BOX','AND','OR','NOT','NAND','NOR','XOR']  
+PALABRAS_CLAVE=['BOX',
+                'AND',
+                'OR',
+                'NOT',
+                'NAND',
+                'NOR',
+                'XOR',
+                'WHEN',
+                'OTHER-CASE',
+                'DO',
+                'OTHER-WHEN',
+                'WHEEL',
+                'LIMIT',
+                'FREQ',
+                'WHEEL-WHILE']  
 class Token:
     def __init__(self,tipo_,valor,ln,pos_ini=None,pos_fin=None,ln_s=None):
         self.tipo=tipo_ 
@@ -156,7 +173,7 @@ class AnalizadorLexico:
         var_str=''
         count_nn=0
         pos_ini=self.pos.copiar()
-        while self.elm_actual!=None and re.match(r'[a-zA-Z0-9_]',self.elm_actual):
+        while self.elm_actual!=None and re.match(r'[a-zA-Z0-9_-]',self.elm_actual):
             if re.match(r'[a-zA-Z_]',self.elm_actual):
                 count_nn+=1
                 var_str+=self.elm_actual
@@ -174,6 +191,7 @@ class AnalizadorLexico:
             elif var_str.upper()=='POR': return Token(t_POR,'POR',self.pos.lin+1,pos_ini,self.pos,self.linea)
             elif var_str.upper()=='ENTRE': return Token(t_ENTRE,'ENTRE',self.pos.lin+1,pos_ini,self.pos,self.linea) 
             elif var_str.upper()=='ELEVADO': return Token(t_POT,'ELEVADO',self.pos.lin+1,pos_ini,self.pos,self.linea) 
+            elif var_str.upper()=='RESTO': return Token(t_REST,'RESTO',self.pos.lin+1,pos_ini,self.pos,self.linea) 
             elif var_str.upper()=='MAYOR': return self.verificar_mayor_igual()
             elif var_str.upper()=='MENOR': return self.verificar_menor_igual() 
             else:
@@ -197,8 +215,7 @@ class AnalizadorLexico:
         tipo_tok=t_MAYOR_QUE
         var_str='MAYOR'
         pos_ini=self.pos.copiar()
-        
-        print(self.elm_actual)
+                
         if self.elm_actual=='=':
             self.mover()                 
             tipo_tok=t_MAYOR_IGUAL
@@ -238,6 +255,12 @@ class AnalizadorLexico:
             elif self.elm_actual==')':
                 tokens.append(Token(t_DERPAREN,')',self.pos.lin+1,pos_ini=self.pos,ln_s=self.linea))
                 self.mover()
+            elif self.elm_actual=='>':
+                tokens.append(Token(t_DERBLOQ,'>',self.pos.lin+1,pos_ini=self.pos,ln_s=self.linea))
+                self.mover()
+            elif self.elm_actual=='<':
+                tokens.append(Token(t_IZQBLOQ,'<',self.pos.lin+1,pos_ini=self.pos,ln_s=self.linea))
+                self.mover()        
             elif self.elm_actual==':':
                 tokens.append(self.verificar_igual())
                 
@@ -264,7 +287,7 @@ def run(FileName,instr,linea=None):
     tokens,error=lex.definir_tokens()
     if error:return None, error
      # Parsear y generador de secuencias AST
-    print(tokens) 
+    #print(tokens) 
     pars=Parser.parsear(tokens)
     ast=pars.parseo()
     if ast.error:return None, ast.error

@@ -16,19 +16,19 @@ while True:
         result,error=Lexador.run(f'shell.py',instr.lstrip(' '))
         if error:
             print(error.str_conv())
-        else:
-            print(result)
+        elif result:
+            print(f'[IA-BITS]>>> {result}')
     
     elif instr.split()[0].lower()=='compilar':
         
         with open(instr.split()[1], instr.split()[2].lstrip('--')) as sourcecode:
             for c,i in enumerate(sourcecode.readlines()):
                 result,error=Lexador.run(f'{os.path.basename(os.path.realpath(__file__))}',i.rstrip('\n'),c+1)
-                print()
+                #print()
                 if error:
                     print(error.str_conv())
-                else:
-                    print(result)     
+                elif result:
+                    print(f'[IA-BITS]>>> {result}')     
                 
     else:
         try:
