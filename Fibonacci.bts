@@ -1,0 +1,26 @@
+box a:0
+box b:1
+box n:5
+box res:0
+when n menor 0 do <box res:0> other-when n::0 do <box res:a> other-when n::1 do <box res:b> other-case <box res:a mas b>
+res
+box a:b
+box b:res
+when n menor 0 do <box res:0> other-when n::0 do <box res:a> other-when n::1 do <box res:b> other-case <box res:a mas b>
+box a:b
+box b:res
+when n menor 0 do <box res:0> other-when n::0 do <box res:a> other-when n::1 do <box res:b> other-case <box res:a mas b>
+res
+box a:b
+box b:res
+when n menor 0 do <box res:0> other-when n::0 do <box res:a> other-when n::1 do <box res:b> other-case <box res:a mas b>
+res
+box a:b
+box b:res
+when n menor 0 do <box res:0> other-when n::0 do <box res:a> other-when n::1 do <box res:b> other-case <box res:a mas b>
+res
+box a:b
+box b:res
+
+
+

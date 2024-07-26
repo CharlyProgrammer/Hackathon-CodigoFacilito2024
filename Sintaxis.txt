@@ -1,4 +1,6 @@
 * --> Pueden existir más de una operacion como Termino
+OJO-> P_CLAVE en minusculas
+
 
 Expresion       :   P_CLAVE: BOX VAR_IDEN ASIGNAR Expresion
                 :   Exp-Comp ( (P_CLAVE: AND|P_CLAVE: OR|P_CLAVE: NAND|P_CLAVE: NOR|P_CLAVE: XOR) Exp-Comp)*
@@ -13,16 +15,25 @@ Termino         :   Factor (POR|ENTRE Factor)*
 Factor          :   (MAS|MENOS) Factor
                 :   Potencia
 
-Potencia        :   Atomico (POTENCIA Factor)*
+Potencia        :   llamada (POTENCIA Factor)*
+
+llamada         :   Atomico (IZQPAREN (Expresion (COMMA Expresion)*)? DERPAREN)
 
 Atomico         :   (ENTERO|REAL)
                 :   IZQPAREN Expresion DERPAREN
 
 IF-exp          :   P_CLAVE: WHEN Expresion P_CLAVE: DO
-                :   (P_CLAVE: OTHER-WHEN Expresion P_CLAVE: DO Expresion)*
-                :   (P_CLAVE: OTHER-CASE Expresion)?
-
-FOR-expr:       :   P_CLAVE: WHEEL VAR_IDEN ASIGNAR Expresion, (P_CLAVE: FREQ Expresion)?, 
-                    P_CLAVE: LIMIT Expresion P_CLAVE: DO Expresion
+                    IZQBLOQ (P_CLAVE: OTHER-WHEN Expresion P_CLAVE: DO IZQBLOQ Expresion DERBLOQ)*
+                    (P_CLAVE: OTHER-CASE IZQBLOQ Expresion DERBLOQ)?
+                 
+FOR-expr:       :   P_CLAVE: WHEEL VAR_IDEN ASIGNAR Expresion, P_CLAVE: LIMIT Expresion
+                    (P_CLAVE: FREQ Expresion)? 
+                    P_CLAVE: DO Expresion IZQBLOQ Expresion DERBLOQ
 
 WHILE-expr      :   P_CLAVE: WHEEL-WHILE Expresion P_CLAVE: DO Expresion
+                :   IZQBLOQ Expresion DERBLOQ
+
+Def-Fun-expr    :   P_CLAVE: TASK VAR_IDEN?
+                :   IZQPAREN (VAR_IDEN (COMMA VAR_IDEN)*)? DERPAREN
+                :   FLECHA_DER 
+                

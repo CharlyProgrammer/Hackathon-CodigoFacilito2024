@@ -6,7 +6,10 @@ import re
 class Interprete:
     def __init__(self,TabSim):
         self.TabSim=TabSim
-        #print(self.TabSim)
+     
+    def get_tab(self):
+        return self.TabSim 
+          
     def visita(self,nodo):
         
         nombre_metod=f'{type(nodo).__name__}_visita'
@@ -35,8 +38,8 @@ class Interprete:
             resul,error=izq.elevar_a(der)
         elif nodo.TokOperador.tipo== lex.t_REST:
             resul,error=izq.modulo(der)    
-        elif nodo.TokOperador.tipo== lex.t_DOBLE_ASIGN:
-            resul,error=izq.llamar_comparacion_da(der)
+        elif nodo.TokOperador.tipo== lex.t_IGUAL:
+            resul,error=izq.llamar_comparacion_igual(der)
         elif nodo.TokOperador.tipo== lex.t_DIFERENTE:
             resul,error=izq.llamar_comparacion_dif(der)     
         elif nodo.TokOperador.tipo== lex.t_MAYOR_QUE:
@@ -47,15 +50,15 @@ class Interprete:
             resul,error=izq.llamar_comparacion_menor(der) 
         elif nodo.TokOperador.tipo== lex.t_MENOR_IGUAL:
             resul,error=izq.llamar_comparacion_meni(der)
-        elif nodo.TokOperador.comprobar(lex.t_PALABRA_CLAVE,'OR'):
+        elif nodo.TokOperador.comprobar(lex.t_PALABRA_CLAVE,'or'):
             resul,error=izq.op_or(der)     
-        elif nodo.TokOperador.comprobar(lex.t_PALABRA_CLAVE,'AND'):
+        elif nodo.TokOperador.comprobar(lex.t_PALABRA_CLAVE,'and'):
             resul,error=izq.op_and(der)
-        elif nodo.TokOperador.comprobar(lex.t_PALABRA_CLAVE,'NOR'):
+        elif nodo.TokOperador.comprobar(lex.t_PALABRA_CLAVE,'nor'):
             resul,error=izq.op_nor(der)
-        elif nodo.TokOperador.comprobar(lex.t_PALABRA_CLAVE,'NAND'):
+        elif nodo.TokOperador.comprobar(lex.t_PALABRA_CLAVE,'nand'):
             resul,error=izq.op_nand(der)   
-        elif nodo.TokOperador.comprobar(lex.t_PALABRA_CLAVE,'XOR'):
+        elif nodo.TokOperador.comprobar(lex.t_PALABRA_CLAVE,'xor'):
             resul,error=izq.op_xor(der)                                              
         if error: 
             return TERes.fracaso(error)
@@ -71,7 +74,7 @@ class Interprete:
           
         if nodo.TokOperador.tipo== lex.t_MENOS:
             num,error=num.multiplicar_por(Numero(-1))
-        elif nodo.TokOperador.comprobar(lex.t_PALABRA_CLAVE,'NOT'):
+        elif nodo.TokOperador.comprobar(lex.t_PALABRA_CLAVE,'not'):
             num,error=num.negar()    
         if error:
             return TERes.fracaso(error)
@@ -98,7 +101,8 @@ class Interprete:
         #print(valor)
         if  TERes.error: return TERes
         self.TabSim.set(n_var,valor)
-        return TERes.exito(valor)
+        return TERes.exito(None)
+    
     def NodoIF_visita(self,nodo):
         TERes=TEResultado()
         for cond,expr in nodo.casos:
@@ -150,14 +154,48 @@ class Interprete:
             TERes.registro(self.visita(nodo.nodo_bloq))
             if TERes.error: return TERes    
         return TERes.exito(None)
+    
+    def NodoDefFunc_visita(self,nodo):
+        TERes=TEResultado()
+        nom_fun = nodo.nom_tok_var.valor if nodo.nom_tok_var else None
+       
+        nodo_bloq = nodo.nodo_bloq
+        nom_args = [arg_name.valor for arg_name in nodo.nom_toks_args]
+        print(nodo_bloq)
+        val_fun = Task_fun(nom_fun, nodo_bloq, nom_args).dar_posicion(nodo.pos_ini,nodo.pos_fin)
+        
+        if nodo.nom_tok_var:
+            self.TabSim.set(nom_fun,val_fun)
+            
+        
+        return TERes.exito(val_fun)
+    
+    def NodoLlamadas_visita(self,nodo):
+        TERes=TEResultado()
+        args=[]
+        #print(nodo.nodo_para_llamar)
+        valor_a_llamar = TERes.registro(self.visita(nodo.nodo_para_llamar)).dar_posicion(nodo.pos_ini,nodo.pos_fin)
+        
+        if TERes.error: return TERes
+        
+
+        for arg_node in nodo.nodos_args:
+            args.append(TERes.registro(self.visita(arg_node)))
+            if TERes.error: return TERes
+        
+        valor_ret = TERes.registro(valor_a_llamar.ejecutar(args, self.TabSim))
+        if TERes.error: return TERes
+        return TERes.exito(valor_ret)
+        
+             
 ########################################
 # TABLA DE SIMBOLOS
 ####################################
 
 class TabSimbol:
-    def __init__(self):
+    def __init__(self,padre=None):
         self.simbolos={}
-        self.padre=None
+        self.padre=padre
     
     def get(self,n_var):
         valor=self.simbolos.get(n_var,None)
@@ -195,9 +233,9 @@ class TEResultado:
 # VALORES/ELEMENTOS DEL LENGUAJE
 ####################################
 
-class Numero:
-    def __init__(self,valor):
-        self.valor=valor
+class ValorNumerico:
+    def __init__(self):
+        
         self.dar_posicion()
         
     
@@ -209,17 +247,80 @@ class Numero:
     
     
     def sumar_a(self,other):
+        return None, self.Operacion_ilegal(other) 
+    
+    def restar_a(self,other):
+        return None, self.Operacion_ilegal(other)
+    
+    def multiplicar_por(self,other):
+        return None, self.Operacion_ilegal(other)
+    
+    def dividir_entre(self,other):
+        return None, self.Operacion_ilegal(other)
+        
+    def elevar_a(self,other):
+        return None, self.Operacion_ilegal(other)   
+    
+    def modulo(self,other):
+        return None, self.Operacion_ilegal(other)
+    
+    def llamar_comparacion_igual(self,other):
+        return None, self.Operacion_ilegal(other) 
+    def llamar_comparacion_dif(self,other):
+        return None, self.Operacion_ilegal(other)  
+    def llamar_comparacion_mayor(self,other):
+        return None, self.Operacion_ilegal(other) 
+    def llamar_comparacion_mi(self,other):
+        return None, self.Operacion_ilegal(other)
+    def llamar_comparacion_menor(self,other):
+        return None, self.Operacion_ilegal(other)     
+    def llamar_comparacion_meni(self,other):
+        return None, self.Operacion_ilegal(other)      
+    def op_or(self,other):
+        return None, self.Operacion_ilegal(other)   
+    def op_and(self,other):
+        return None, self.Operacion_ilegal(other)  
+    def negar(self):
+        return None, self.Operacion_ilegal(other)
+              
+    def op_nand(self,other):
+        return None, self.Operacion_ilegal(other)    
+    def op_nor(self,other):
+        return None, self.Operacion_ilegal(other)   
+    def op_xor(self,other):
+        return None, self.Operacion_ilegal(other)  
+    
+    def ejecutar(self,args):
+        return TEResultado().fracaso(self.Operacion_ilegal())
+            
+    def comprobar_verdad(self):
+        return False
+    
+    def Operacion_ilegal(self, other=None):
+        if not other: other = self
+        return lex.ErrorTiempoEjecucion(other.i_pos,other.f_pos,'Operación Ilegal')
+
+class Numero(ValorNumerico):
+    def __init__(self,valor):
+        super().__init__()
+        self.valor=valor
+       
+    
+    def sumar_a(self,other):
         if isinstance(other,Numero):
             return Numero(self.valor + other.valor),None 
-    
+        else:
+            return None, self.Operacion_ilegal(other)
     def restar_a(self,other):
         if isinstance(other,Numero):
             return Numero(self.valor - other.valor),None
-    
+        else:
+            return None, self.Operacion_ilegal(other)
     def multiplicar_por(self,other):
         if isinstance(other,Numero):
             return Numero(self.valor * other.valor),None
-    
+        else:
+            return None, self.Operacion_ilegal(other)
     def dividir_entre(self,other):
         if isinstance(other,Numero):
             
@@ -227,60 +328,115 @@ class Numero:
                 
                 return None,lex.ErrorTiempoEjecucion(other.i_pos,other.f_pos,'División por zero')
             return Numero(self.valor / other.valor),None
-        
+        else:
+            return None, self.Operacion_ilegal(other)
     def elevar_a(self,other):
         if isinstance(other,Numero):
             return Numero(self.valor ** other.valor),None    
-    
+        else:
+            return None, self.Operacion_ilegal(other)
     def modulo(self,other):
         if isinstance(other,Numero):
             return Numero(self.valor % other.valor),None 
+        else:
+            return None, self.Operacion_ilegal(other)
     
-    
-    def llamar_comparacion_da(self,other):
+    def llamar_comparacion_igual(self,other):
         if isinstance(other,Numero):
             return Numero(int(self.valor==other.valor)),None 
+        else:
+            return None, self.Operacion_ilegal(other)
     def llamar_comparacion_dif(self,other):
         if isinstance(other,Numero):
-            return Numero(int(self.valor!=other.valor)),None    
+            return Numero(int(self.valor!=other.valor)),None
+        else:
+            return None, self.Operacion_ilegal(other)    
     def llamar_comparacion_mayor(self,other):
         if isinstance(other,Numero):
             return Numero(int(self.valor>other.valor)),None 
+        else:
+            return None, self.Operacion_ilegal(other)
     def llamar_comparacion_mi(self,other):
         if isinstance(other,Numero):
-            return Numero(int(self.valor>=other.valor)),None 
+            return Numero(int(self.valor>=other.valor)),None
+        else:
+            return None, self.Operacion_ilegal(other) 
     def llamar_comparacion_menor(self,other):
         if isinstance(other,Numero):
-            return Numero(int(self.valor<other.valor)),None     
+            return Numero(int(self.valor<other.valor)),None
+        else:
+            return None, self.Operacion_ilegal(other)     
     def llamar_comparacion_meni(self,other):
         if isinstance(other,Numero):
-            return Numero(int(self.valor<=other.valor)),None      
+            return Numero(int(self.valor<=other.valor)),None 
+        else:
+            return None, self.Operacion_ilegal(other)     
     def op_or(self,other):
         if isinstance(other,Numero):
-            return Numero(int(self.valor or other.valor)),None    
+            return Numero(int(self.valor or other.valor)),None
+        else:
+            return None, self.Operacion_ilegal(other)    
     def op_and(self,other):
         if isinstance(other,Numero):
-            return Numero(int(self.valor and other.valor)),None  
+            return Numero(int(self.valor and other.valor)),None
+        else:
+            return None, self.Operacion_ilegal(other)  
     def negar(self):
         return Numero(1 if self.valor==0 else 0), None
+        
               
     def op_nand(self,other):
         if isinstance(other,Numero):
-            return Numero(int(not(self.valor and other.valor))),None    
+            return Numero(int(not(self.valor and other.valor))),None
+        else:
+            return None, self.Operacion_ilegal(other)    
     def op_nor(self,other):
         if isinstance(other,Numero):
             return Numero(int(not(self.valor or other.valor))),None    
+        else:
+            return None, self.Operacion_ilegal(other)
     def op_xor(self,other):
         if isinstance(other,Numero):
             A=self.valor
             B=other.valor
             return Numero(int((A and not(B))or(not(A) and B))),None  
+        else:
+            return None, self.Operacion_ilegal(other)
         
     def comprobar_verdad(self):
         return self.valor !=0
               
     def __repr__(self) -> str:
         
-        if re.match(r'-',str(self.valor) ):return 'MENOS '+str(self.valor*-1)
+        if re.match(r'-',str(self.valor) ):return 'menos '+str(self.valor*-1)
         
-        return str(self.valor)                                          
+        return str(self.valor)     
+
+class Task_fun(ValorNumerico):
+    
+    def __init__(self,nom,nodo_bloq,nom_args):
+        super().__init__()
+        self.nom=nom or "<la_sin_nombre>"
+        self.nodo_bloq=nodo_bloq
+        self.nom_args=nom_args
+        
+    def ejecutar(self,args,table):
+        res= TEResultado()
+        
+        print(self.nodo_bloq)
+        if len(args) > len(self.nom_args):
+            return res.fracaso(lex.ErrorTiempoEjecucion(self.pos_ini,self.pos_fin,f'{len(args)-len(self.nom_args)} demasiados parametros pasados a {self.nom}'))
+        if len(args) < len(self.nom_args):
+            return res.fracaso(lex.ErrorTiempoEjecucion(self.pos_ini,self.pos_fin,f'{len(self.nom_args) - len(args)} pocos parametros pasados a {self.nom}'))
+        
+        for i in range(len(args)):
+            nom_arg=self.nom_args[i]
+            val_arg=args[i]
+            table.set(nom_arg,val_arg)  
+        
+        valor=res.registro(Interprete.visita(self.nodo_bloq))
+        if res.error:return res
+        return res.exito(valor)  
+    
+    def __repr__(self) -> str:
+        return f'<Task {self.nom}>'                                           

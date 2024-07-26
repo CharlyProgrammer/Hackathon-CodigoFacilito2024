@@ -84,31 +84,36 @@ t_DERPAREN ='DERPAREN'
 t_IZQBLOQ ='IZQBLOQ'
 t_DERBLOQ ='DERBLOQ'
 t_ASIGNAR='ASIGNAR'
-t_DOBLE_ASIGN='D_ASIGNAR'
+t_IGUAL='IGUAL'
 t_DIFERENTE='DIFERENTE'
 t_MENOR_QUE='MENOR_QUE'
 t_MAYOR_QUE='MAYOR_QUE'
 t_MAYOR_IGUAL='MAYOR_IGUAL'
 t_MENOR_IGUAL='MENOR_IGUAL'
 
+t_COMMA='COMMA'
+t_GUION='GUIOLN'
+t_FLECHA_DER='FLECHA_DER'
 t_VAR_IDEN='V_IDEN'
 t_PALABRA_CLAVE='P_CLAVE'
 t_FDA='FDA'
-PALABRAS_CLAVE=['BOX',
-                'AND',
-                'OR',
-                'NOT',
-                'NAND',
-                'NOR',
-                'XOR',
-                'WHEN',
-                'OTHER-CASE',
-                'DO',
-                'OTHER-WHEN',
-                'WHEEL',
-                'LIMIT',
-                'FREQ',
-                'WHEEL-WHILE']  
+PALABRAS_CLAVE=['box',
+                'and',
+                'or',
+                'not',
+                'nand',
+                'nor',
+                'xor',
+                'when',
+                'other-case',
+                'do',
+                'other-when',
+                'wheel',
+                'limit',
+                'freq',
+                'wheel-while',
+                'task',
+                'exit']  
 class Token:
     def __init__(self,tipo_,valor,ln,pos_ini=None,pos_fin=None,ln_s=None):
         self.tipo=tipo_ 
@@ -171,68 +176,40 @@ class AnalizadorLexico:
         
     def constr_str(self):
         var_str=''
-        count_nn=0
         pos_ini=self.pos.copiar()
         while self.elm_actual!=None and re.match(r'[a-zA-Z0-9_-]',self.elm_actual):
-            if re.match(r'[a-zA-Z_]',self.elm_actual):
-                count_nn+=1
-                var_str+=self.elm_actual
-            else:
-                var_str+=self.elm_actual   
+            var_str+=self.elm_actual
             self.mover()
-            
-            
-            
-        tipo_tok=t_PALABRA_CLAVE if var_str.upper() in PALABRAS_CLAVE else t_VAR_IDEN
+                  
+        tipo_tok=t_PALABRA_CLAVE if var_str in PALABRAS_CLAVE else t_VAR_IDEN
            
-        if count_nn >0:
-            if var_str.upper()=='MAS': return Token(t_MAS,'MAS',self.pos.lin+1,pos_ini,self.pos,self.linea)
-            elif var_str.upper()=='MENOS': return Token(t_MENOS,'MENOS',self.pos.lin+1,pos_ini,self.pos,self.linea)
-            elif var_str.upper()=='POR': return Token(t_POR,'POR',self.pos.lin+1,pos_ini,self.pos,self.linea)
-            elif var_str.upper()=='ENTRE': return Token(t_ENTRE,'ENTRE',self.pos.lin+1,pos_ini,self.pos,self.linea) 
-            elif var_str.upper()=='ELEVADO': return Token(t_POT,'ELEVADO',self.pos.lin+1,pos_ini,self.pos,self.linea) 
-            elif var_str.upper()=='RESTO': return Token(t_REST,'RESTO',self.pos.lin+1,pos_ini,self.pos,self.linea) 
-            elif var_str.upper()=='MAYOR': return self.verificar_mayor_igual()
-            elif var_str.upper()=='MENOR': return self.verificar_menor_igual() 
-            else:
-                if tipo_tok==t_PALABRA_CLAVE:
-                    return Token(tipo_tok,var_str.upper(),self.pos.lin+1,pos_ini,self.pos,self.linea)  
-                else:
-                    return Token(tipo_tok,var_str,self.pos.lin+1,pos_ini,self.pos,self.linea) 
+        
+        if var_str=='mas': return Token(t_MAS,'mas',self.pos.lin+1,pos_ini,self.pos,self.linea)
+        elif var_str=='menos': return Token(t_MENOS,'menos',self.pos.lin+1,pos_ini,self.pos,self.linea)
+        elif var_str=='por': return Token(t_POR,'por',self.pos.lin+1,pos_ini,self.pos,self.linea)
+        elif var_str=='entre': return Token(t_ENTRE,'entre',self.pos.lin+1,pos_ini,self.pos,self.linea) 
+        elif var_str=='elevado': return Token(t_POT,'elevado',self.pos.lin+1,pos_ini,self.pos,self.linea) 
+        elif var_str=='resto': return Token(t_REST,'resto',self.pos.lin+1,pos_ini,self.pos,self.linea) 
+        elif var_str=='mayor': return Token(t_MAYOR_QUE,'mayor',self.pos.lin+1,pos_ini,self.pos,self.linea)
+        elif var_str=='menor': return Token(t_MENOR_QUE,'menor',self.pos.lin+1,pos_ini,self.pos,self.linea)
+        elif var_str=='mayor-igual': return Token(t_MAYOR_IGUAL,'mayor-igual',self.pos.lin+1,pos_ini,self.pos,self.linea)
+        elif var_str=='menor-igual': return Token(t_MENOR_IGUAL,'menor-igual',self.pos.lin+1,pos_ini,self.pos,self.linea)
+        elif var_str=='igual': return Token(t_IGUAL,'igual',self.pos.lin+1,pos_ini,self.pos,self.linea)
+      
+        else:
+            return Token(tipo_tok,var_str,self.pos.lin+1,pos_ini,self.pos,self.linea)  
     
-    def verificar_igual(self):
-        tipo_tok=t_ASIGNAR
-        var_str=':'
-        pos_ini=self.pos.copiar()
-        self.mover()
-        if self.elm_actual==':':
-            self.mover()                 
-            tipo_tok=t_DOBLE_ASIGN
-            var_str='::'    
-        return Token(tipo_tok,var_str,self.pos.lin+1,pos_ini,self.pos,self.linea) 
-       
-    def verificar_mayor_igual(self):
-        tipo_tok=t_MAYOR_QUE
-        var_str='MAYOR'
-        pos_ini=self.pos.copiar()
-                
-        if self.elm_actual=='=':
-            self.mover()                 
-            tipo_tok=t_MAYOR_IGUAL
-            var_str='MAYOR='    
-        return Token(tipo_tok,var_str,self.pos.lin+1,pos_ini,self.pos,self.linea)        
-    
-    def verificar_menor_igual(self):
-        tipo_tok=t_MENOR_QUE
-        var_str='MENOR'
-        pos_ini=self.pos.copiar()
-       
-        if self.elm_actual=='=':
-            self.mover()                 
-            tipo_tok=t_MENOR_IGUAL
-            var_str='MENOR='    
-        return Token(tipo_tok,var_str,self.pos.lin+1,pos_ini,self.pos,self.linea)     
-                                          
+    def constr_sp(self):
+          tipo_tok=t_GUION
+          pos_ini=self.pos.copiar()
+          self.mover()
+          sp_str='-'
+          if self.elm_actual=='>':
+              tipo_tok=t_FLECHA_DER
+              sp_str='->'
+              self.mover()
+          return Token(tipo_tok,sp_str,self.pos.lin+1,pos_ini,self.pos,self.linea)     
+             
     def definir_tokens(self):
         
         tokens=[]
@@ -242,13 +219,17 @@ class AnalizadorLexico:
             if self.elm_actual in '\n\t ':
                 
                 self.mover()
+                
+          
+            
             elif re.match(r'[a-zA-Z]',self.elm_actual):
                 
                 tokens.append(self.constr_str())
                 
             elif self.elm_actual in digits:
                 tokens.append(self.constr_numero())
-                  
+            elif self.elm_actual=='-':
+                tokens.append(self.constr_sp())      
             elif self.elm_actual=='(':
                 tokens.append(Token(t_IZQPAREN,'(',self.pos.lin+1,pos_ini=self.pos,ln_s=self.linea))
                 self.mover()
@@ -262,8 +243,11 @@ class AnalizadorLexico:
                 tokens.append(Token(t_IZQBLOQ,'<',self.pos.lin+1,pos_ini=self.pos,ln_s=self.linea))
                 self.mover()        
             elif self.elm_actual==':':
-                tokens.append(self.verificar_igual())
-                
+                tokens.append(Token(t_ASIGNAR,':',self.pos.lin+1,pos_ini=self.pos,ln_s=self.linea))
+                self.mover()
+            elif self.elm_actual==',':
+                tokens.append(Token(t_COMMA,',',self.pos.lin+1,pos_ini=self.pos,ln_s=self.linea))
+                self.mover()   
             elif self.elm_actual=='?':
                 tokens.append(Token(t_DIFERENTE,'?',self.pos.lin+1,pos_ini=self.pos,ln_s=self.linea))
                 self.mover()    
@@ -279,7 +263,8 @@ global_tabla_simbol=Interprete.TabSimbol()
 global_tabla_simbol.set('NULL',Interprete.Numero(0))
 global_tabla_simbol.set('VERDADERO',Interprete.Numero(1))
 global_tabla_simbol.set('FALSO',Interprete.Numero(0))
-
+global_tabla_simbol.set('PI',Interprete.Numero(3.141592))
+global_tabla_simbol.set('EULER',Interprete.Numero(2.718281))
 
 def run(FileName,instr,linea=None):
     # Generador de tokens

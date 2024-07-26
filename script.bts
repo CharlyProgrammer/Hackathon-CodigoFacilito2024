@@ -1,0 +1,13 @@
+1 mas 6
+menos 4 por 5 mas 6
+1 mas 7 por (3 menos 10) 
+1 mas 9
+menos 4 mas 8 por(3 entre 7) 
+box fr:3
+fr mas 8
+when fr igual 9 and  fr mayor menos 10 do <fr mas 1> other-when fr resto 2 igual 0 do <fr por 2> other-case <fr elevado 2>
+wheel i:0 limit 10 freq 2 do <box fr:fr mas i>
+fr
+box a:3
+wheel-while a mayor 0 do <box a:a menos 1> 
+a

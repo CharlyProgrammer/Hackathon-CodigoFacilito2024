@@ -21,15 +21,15 @@ while True:
     
     elif instr.split()[0].lower()=='compilar':
         
-        with open(instr.split()[1], instr.split()[2].lstrip('--')) as sourcecode:
+       with open(instr.split()[1], instr.split()[2].lstrip('--')) as sourcecode:
             for c,i in enumerate(sourcecode.readlines()):
                 result,error=Lexador.run(f'{os.path.basename(os.path.realpath(__file__))}',i.rstrip('\n'),c+1)
                 #print()
                 if error:
                     print(error.str_conv())
                 elif result:
-                    print(f'[IA-BITS]>>> {result}')     
-                
+                    print(f'[IA-BITS]>>> {result}') 
+
     else:
         try:
             raise SyntaxError
