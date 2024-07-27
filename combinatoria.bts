@@ -1,0 +1,3 @@
+box n:2
+box m:2
+(factorial m) entre ((factorial (m menos n)) por (factorial n)) 

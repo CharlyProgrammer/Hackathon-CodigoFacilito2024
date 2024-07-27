@@ -1,11 +1,13 @@
 import src.source.Lexador as Lexador
 import os
+import src.source.dar_bienvenida as welcome
 comandos=[]
 
 
-
+welcome.draw_welcome_AI_BITS()
 while True:
-    instr=input('[IA-BITS]>>> ')
+    
+    instr=input('[AI-BITS]>>> ')
     
     if instr=='salir()':
         break
@@ -28,7 +30,7 @@ while True:
                 if error:
                     print(error.str_conv())
                 elif result:
-                    print(f'[IA-BITS]>>> {result}') 
+                    print(f'[AI-BITS]>>> {result}') 
 
     else:
         try:

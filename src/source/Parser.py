@@ -9,6 +9,14 @@ class NodoNum:
         self.pos_fin=self.token.pos_fin
     def __repr__(self) -> str:
         return f'{self.token}'
+
+class NodoText:
+    def __init__(self,token):
+        self.token=token
+        self.pos_ini=self.token.pos_ini
+        self.pos_fin=self.token.pos_fin
+    def __repr__(self) -> str:
+        return f'{self.token}'
     
 class NodoOp:
     def __init__(self,NodoIzq,TokOperador,NodoDer):
@@ -185,6 +193,20 @@ class parsear:
             nodo=res.registro(self.exp_comp())
             if res.error: return res
             return res.exito(NodoOpUnit(tok_op,nodo))
+        elif self.token_actual.tipo==Lexador.t_FACTORIAL:
+            tok_op=self.token_actual
+            res.registro_recorrer()
+            self.recorrer()
+            nodo=res.registro(self.exp_comp())
+            if res.error: return res
+            return res.exito(NodoOpUnit(tok_op,nodo))
+        elif self.token_actual.tipo==Lexador.t_GRADIENTE_COMB:
+            tok_op=self.token_actual
+            res.registro_recorrer()
+            self.recorrer()
+            nodo=res.registro(self.exp_comp())
+            if res.error: return res
+            return res.exito(NodoOpUnit(tok_op,nodo))
         nodo=res.registro(self.op_binar(self.exp_aritm,(Lexador.t_IGUAL,Lexador.t_DIFERENTE,Lexador.t_MAYOR_QUE,Lexador.t_MENOR_QUE,Lexador.t_MAYOR_IGUAL,Lexador.t_MENOR_IGUAL)))
         if res.error:
             return res.fracaso(Lexador.ErrorSintaxisInvalida(self.token_actual.pos_ini,self.token_actual.pos_fin,', se esperaba un un elemento ENTERO, REAL, VAR_IDEN,operadores MAS, MENOS, "(" o NOT' ))
@@ -197,7 +219,7 @@ class parsear:
     
     def termino(self):
         
-        return self.op_binar(self.factor,(Lexador.t_POR,Lexador.t_ENTRE,Lexador.t_REST))    
+        return self.op_binar(self.factor,(Lexador.t_POR,Lexador.t_ENTRE,Lexador.t_REST,Lexador.t_PARTICION, Lexador.t_NAVEGAR,Lexador.t_TRADUCIR))    
     def op_binar(self,func_A,ops,func_B=None):
         if func_B==None:
             func_B=func_A
@@ -253,6 +275,10 @@ class parsear:
              res.registro_recorrer()
              self.recorrer()
              return res.exito(NodoNum(tok))
+        elif tok.tipo in (Lexador.t_TEXTO):
+            res.registro_recorrer()
+            self.recorrer()
+            return res.exito(NodoText(tok))  
         elif tok.tipo in (Lexador.t_VAR_IDEN):
             res.registro_recorrer()
             self.recorrer()

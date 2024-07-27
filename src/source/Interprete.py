@@ -3,6 +3,10 @@
 ####################################
 import src.source.Lexador as lex
 import re
+import webbrowser
+from googletrans import Translator
+import pandas as pd
+import math
 class Interprete:
     def __init__(self,TabSim):
         self.TabSim=TabSim
@@ -18,8 +22,10 @@ class Interprete:
         return metod(nodo)
     def no_visita(self,nodo):
         raise Exception(f'No hay definido un metodo para peticiones o visitas, visit_{type(nodo).__name__}')
-    def NodoNum_visita(self,nodo,):
+    def NodoNum_visita(self,nodo):
         return TEResultado().exito(Numero(nodo.token.valor).dar_posicion(nodo.pos_ini,nodo.pos_fin))
+    def NodoText_visita(self,nodo):
+        return TEResultado().exito(Texto(nodo.token.valor).dar_posicion(nodo.pos_ini,nodo.pos_fin))
     def NodoOp_visita(self,nodo):
         #print('Nodo de operaciones encontrado!')
         TERes=TEResultado()
@@ -37,7 +43,13 @@ class Interprete:
         elif nodo.TokOperador.tipo== lex.t_POT:
             resul,error=izq.elevar_a(der)
         elif nodo.TokOperador.tipo== lex.t_REST:
-            resul,error=izq.modulo(der)    
+            resul,error=izq.modulo(der)
+        elif nodo.TokOperador.tipo== lex.t_NAVEGAR:
+            resul,error=izq.navegar(der)
+        elif nodo.TokOperador.tipo== lex.t_TRADUCIR:
+            resul,error=izq.traducir(der)        
+        elif nodo.TokOperador.tipo== lex.t_PARTICION:
+            resul,error=izq.partir(der)         
         elif nodo.TokOperador.tipo== lex.t_IGUAL:
             resul,error=izq.llamar_comparacion_igual(der)
         elif nodo.TokOperador.tipo== lex.t_DIFERENTE:
@@ -75,7 +87,11 @@ class Interprete:
         if nodo.TokOperador.tipo== lex.t_MENOS:
             num,error=num.multiplicar_por(Numero(-1))
         elif nodo.TokOperador.comprobar(lex.t_PALABRA_CLAVE,'not'):
-            num,error=num.negar()    
+            num,error=num.negar()
+        elif nodo.TokOperador.tipo== lex.t_FACTORIAL:
+            num,error=num.factorial()
+        elif nodo.TokOperador.tipo== lex.t_GRADIENTE_COMB:
+            num,error=num.gradiente_comb()            
         if error:
             return TERes.fracaso(error)
         else:
@@ -161,9 +177,9 @@ class Interprete:
        
         nodo_bloq = nodo.nodo_bloq
         nom_args = [arg_name.valor for arg_name in nodo.nom_toks_args]
-        print(nodo_bloq)
-        val_fun = Task_fun(nom_fun, nodo_bloq, nom_args).dar_posicion(nodo.pos_ini,nodo.pos_fin)
         
+        val_fun = Task_fun(nom_fun, nodo_bloq, nom_args).dar_posicion(nodo.pos_ini,nodo.pos_fin)
+        print(val_fun)
         if nodo.nom_tok_var:
             self.TabSim.set(nom_fun,val_fun)
             
@@ -263,7 +279,12 @@ class ValorNumerico:
     
     def modulo(self,other):
         return None, self.Operacion_ilegal(other)
-    
+    def navegar(self,other):
+        return None, self.Operacion_ilegal(other)
+    def traducir(self,other):
+        return None, self.Operacion_ilegal(other)
+    def partir(self,other):
+        return None, self.Operacion_ilegal(other)
     def llamar_comparacion_igual(self,other):
         return None, self.Operacion_ilegal(other) 
     def llamar_comparacion_dif(self,other):
@@ -282,7 +303,10 @@ class ValorNumerico:
         return None, self.Operacion_ilegal(other)  
     def negar(self):
         return None, self.Operacion_ilegal(other)
-              
+    def factorial(self):
+        return None, self.Operacion_ilegal(other) 
+    def gradiente_comb(self):
+        return None, self.Operacion_ilegal(other)         
     def op_nand(self,other):
         return None, self.Operacion_ilegal(other)    
     def op_nor(self,other):
@@ -295,7 +319,9 @@ class ValorNumerico:
             
     def comprobar_verdad(self):
         return False
-    
+    def copia(self):
+        raise Exception('No existe un metodo "copiar" actualmente definido')
+
     def Operacion_ilegal(self, other=None):
         if not other: other = self
         return lex.ErrorTiempoEjecucion(other.i_pos,other.f_pos,'Operación Ilegal')
@@ -341,6 +367,40 @@ class Numero(ValorNumerico):
         else:
             return None, self.Operacion_ilegal(other)
     
+    def navegar(self,other):
+        webs={'videos':'https://www.youtube.com/results?search_query=',
+              'tutoriales':'https://es.wikihow.com/',
+              'diccionario':'https://dle.rae.es/',
+              'wikipedia':'https://es.wikipedia.org/wiki/',
+              'google':'https://www.google.com/search?q=',
+              'cursos':'https://codigofacilito.com/cursos?utf8=%E2%9C%93&search%5Bkeyword%5D=',
+              'papers':'https://ieeexplore.ieee.org/search/searchresult.jsp?newsearch=true&queryText='}
+        
+        if isinstance(other,Numero):
+            webbrowser.open(webs[other.valor]+ str(self.valor))
+            return Numero(1),None 
+        else:
+            return None, self.Operacion_ilegal(other)
+    
+    def traducir(self,other):
+        
+        if isinstance(other,Numero):
+            return Numero(0),None
+        else:
+            return None, self.Operacion_ilegal(other)
+     
+     
+    def partir(self,other):
+        if isinstance(other,Numero):
+            if other.valor<=0 or self.valor<=0:
+                 return None,lex.ErrorTiempoEjecucion(other.i_pos,other.f_pos,', ni el numerador o denominador pueden ser 0')
+            if self.valor <= other.valor:
+                return Numero(other.valor - self.valor),None
+            else:
+                 return None,lex.ErrorTiempoEjecucion(self.i_pos,self.f_pos,', Error! El numerador debe ser menor o igual al denominador')
+        else:
+            return None, self.Operacion_ilegal(other)
+        
     def llamar_comparacion_igual(self,other):
         if isinstance(other,Numero):
             return Numero(int(self.valor==other.valor)),None 
@@ -383,8 +443,55 @@ class Numero(ValorNumerico):
             return None, self.Operacion_ilegal(other)  
     def negar(self):
         return Numero(1 if self.valor==0 else 0), None
+    def comprobar_verdad(self):
+         return self.valor != 0
+     
+    def copia(self):
+        copia = Numero(self.valor)
+        copia.dar_posicion(self.pos_ini, self.pos_fin)
+        return copia
+    
+    def factorial(self):
+        res=1
+        n=self.valor
+        if n > 0:
+            while n >0:
+                res*=n
+                n-=1
+            return Numero(res),None
+        elif n==0:
+            return Numero(1), None
+                    
+        else:
+            return None,lex.ErrorTiempoEjecucion(self.i_pos,self.f_pos,'No existe el Factorial de un valor negativo')
         
-              
+    def gradiente_comb(self):
+        
+        n=self.valor
+        combs=[]
+        ns=[]
+        if n > 0:
+                  
+            for i in range(n):
+                 if i+1==1:
+                     combs.append(0)
+                     ns.append(i+1)
+                 else:
+                    comb=math.factorial(i+1)//(math.factorial(i-1)*math.factorial(2))
+                    combs.append(comb)
+                    ns.append(i+1)
+            tabla=pd.DataFrame({'combinaciones':combs})
+            tabla.index,tabla.index.name=ns,'n'
+            print(tabla)
+            print('El gradiente combinatorio o el # de posibles combinaciones para n+1 es:')
+            return Numero(int(combs[-1]+ns[-1])), None     
+                           
+        else:
+            return None,lex.ErrorTiempoEjecucion(self.i_pos,self.f_pos,'No existe el Gradiente combinatorio de un valor negativo o cero "0"')
+            
+
+        
+       
     def op_nand(self,other):
         if isinstance(other,Numero):
             return Numero(int(not(self.valor and other.valor))),None
@@ -412,6 +519,71 @@ class Numero(ValorNumerico):
         
         return str(self.valor)     
 
+class Texto(ValorNumerico):
+    def __init__(self,valor):
+        super().__init__()
+        self.valor=valor
+    
+    def __repr__(self) -> str:
+        return f'{self.valor}'
+    
+    def sumar_a(self,other):
+        if isinstance(other,Texto):
+            return Texto(self.valor + other.valor),None
+        else:
+            return None, self.Operacion_ilegal(other)    
+    
+    def multiplicar_por(self,other):
+        if isinstance(other,Numero):
+            return Texto(self.valor * other.valor),None
+        else:
+            return None, self.Operacion_ilegal(other)     
+    def llamar_comparacion_igual(self,other):
+        if isinstance(other,Texto):
+            return Numero(int(self.valor==other.valor)),None 
+        else:
+            return None, self.Operacion_ilegal(other) 
+    
+    def llamar_comparacion_dif(self,other):
+        if isinstance(other,Texto):
+            return Numero(int(self.valor!=other.valor)),None 
+        else:
+            return None, self.Operacion_ilegal(other)   
+        
+    def comprobar_verdad(self):
+        return len(self.valor) > 0
+    
+    def copia(self):
+        copia=Texto(self.valor)
+        copia.dar_posicion(self.i_pos,self.f_pos)
+        return copia
+    
+    def traducir(self,other):
+        translator = Translator()
+        if isinstance(other,Texto):
+            return Texto(f"Traduccion: '{self.valor}' --> '{translator.translate(self.valor,dest=other.valor).text}'"),None
+        else:
+            return None, self.Operacion_ilegal(other)
+    
+    def navegar(self,other):
+        webs={'videos':'https://www.youtube.com/results?search_query=',
+              'tutoriales':'https://es.wikihow.com/',
+              'diccionario':'https://dle.rae.es/',
+              'wikipedia':'https://es.wikipedia.org/wiki/',
+              'google':'https://www.google.com/search?q=',
+              'cursos':'https://codigofacilito.com/cursos?utf8=%E2%9C%93&search%5Bkeyword%5D=',
+              'papers':'https://ieeexplore.ieee.org/search/searchresult.jsp?newsearch=true&queryText='}
+        if isinstance(other,Texto):
+            webbrowser.open(webs[other.valor]+ self.valor)
+            return Texto(f"Busqueda: '{self.valor}' realizada con exito en '{other.valor}'"),None 
+        else:
+            return None, self.Operacion_ilegal(other)
+    
+   
+      
+    
+
+
 class Task_fun(ValorNumerico):
     
     def __init__(self,nom,nodo_bloq,nom_args):
@@ -423,7 +595,7 @@ class Task_fun(ValorNumerico):
     def ejecutar(self,args,table):
         res= TEResultado()
         
-        print(self.nodo_bloq)
+        #print(self.nodo_bloq)
         if len(args) > len(self.nom_args):
             return res.fracaso(lex.ErrorTiempoEjecucion(self.pos_ini,self.pos_fin,f'{len(args)-len(self.nom_args)} demasiados parametros pasados a {self.nom}'))
         if len(args) < len(self.nom_args):
@@ -434,7 +606,7 @@ class Task_fun(ValorNumerico):
             val_arg=args[i]
             table.set(nom_arg,val_arg)  
         
-        valor=res.registro(Interprete.visita(self.nodo_bloq))
+        valor=res.registro(Interprete(table).visita(self.nodo_bloq))
         if res.error:return res
         return res.exito(valor)  
     

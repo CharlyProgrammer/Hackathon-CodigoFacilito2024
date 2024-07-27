@@ -19,8 +19,11 @@ Potencia        :   llamada (POTENCIA Factor)*
 
 llamada         :   Atomico (IZQPAREN (Expresion (COMMA Expresion)*)? DERPAREN)
 
-Atomico         :   (ENTERO|REAL)
+Atomico         :   (ENTERO|REAL|TEXTO|VAR_IDEN)
                 :   IZQPAREN Expresion DERPAREN
+                :   IF-exp 
+                :   FOR-expr
+                :   WHILE-expr
 
 IF-exp          :   P_CLAVE: WHEN Expresion P_CLAVE: DO
                     IZQBLOQ (P_CLAVE: OTHER-WHEN Expresion P_CLAVE: DO IZQBLOQ Expresion DERBLOQ)*
