@@ -6,14 +6,14 @@ Expresion       :   P_CLAVE: BOX VAR_IDEN ASIGNAR Expresion
                 :   Exp-Comp ( (P_CLAVE: AND|P_CLAVE: OR|P_CLAVE: NAND|P_CLAVE: NOR|P_CLAVE: XOR) Exp-Comp)*
 
 Exp-Comp        :   (P_CLAVE: NOT) Exp-Comp
-                :   Exp-Aritm ((D_ASIGNAR|MAYOR_QUE|MAYOR_IGUAL|MENOR_QUE|MENOR_IGUAL) Exp-Aritm)*
+                :   Exp-Aritm ((D_ASIGNAR|MAYOR_QUE|MAYOR_IGUAL|MENOR_QUE|MENOR_IGUAL|DIFERENTE|IGUAL) Exp-Aritm)*
 
 Exp-Aritm       :   Termino (MAS|MENOS Termino)* 
 
-Termino         :   Factor (POR|ENTRE Factor)* 
+Termino         :   Factor (POR|ENTRE|RESTO Factor)* 
 
 Factor          :   (MAS|MENOS) Factor
-                :   Potencia
+                :    Potencia
 
 Potencia        :   llamada (POTENCIA Factor)*
 

@@ -1,5 +1,5 @@
 # Source package
-# Author: Carlos Maldonado (ce.maldonadocaro@gmail.com)
+# Authores: Carlos Maldonado (ce.maldonadocaro@gmail.com) y Carlos Fernando Aguilar González
 # https://github.com/CharlyProgrammer
 
 __version__ = '2024.07.18'
