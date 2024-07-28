@@ -1,0 +1,4 @@
+box s:0
+box p:1
+task sumatoria(n)->wheel i:1 limit n mas 1 do <box s:s mas i>
+task productoria(n)->wheel i:1 limit n mas 1 do <box p:p por i>

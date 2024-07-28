@@ -2,11 +2,14 @@
 # INTERPRETE DEL LENGUAJE
 ####################################
 import src.source.Lexador as lex
+import src.source.chatbot_openai as gpt
 import re
 import webbrowser
-from googletrans import Translator
+#from googletrans import Translator
 import pandas as pd
 import math
+
+
 class Interprete:
     def __init__(self,TabSim):
         self.TabSim=TabSim
@@ -46,6 +49,8 @@ class Interprete:
             resul,error=izq.modulo(der)
         elif nodo.TokOperador.tipo== lex.t_NAVEGAR:
             resul,error=izq.navegar(der)
+        elif nodo.TokOperador.tipo== lex.t_PREGUNTAR:
+            resul,error=izq.preguntar_chatGPT(der)    
         elif nodo.TokOperador.tipo== lex.t_TRADUCIR:
             resul,error=izq.traducir(der)        
         elif nodo.TokOperador.tipo== lex.t_PARTICION:
@@ -281,6 +286,8 @@ class ValorNumerico:
         return None, self.Operacion_ilegal(other)
     def navegar(self,other):
         return None, self.Operacion_ilegal(other)
+    def preguntar_chatGPT(self,other):
+        return None, self.Operacion_ilegal(other)
     def traducir(self,other):
         return None, self.Operacion_ilegal(other)
     def partir(self,other):
@@ -324,7 +331,7 @@ class ValorNumerico:
 
     def Operacion_ilegal(self, other=None):
         if not other: other = self
-        return lex.ErrorTiempoEjecucion(other.i_pos,other.f_pos,'Operación Ilegal')
+        return lex.ErrorTiempoEjecucion(other.i_pos,other.f_pos,',Operación Ilegal!')
 
 class Numero(ValorNumerico):
     def __init__(self,valor):
@@ -368,19 +375,22 @@ class Numero(ValorNumerico):
             return None, self.Operacion_ilegal(other)
     
     def navegar(self,other):
-        webs={'videos':'https://www.youtube.com/results?search_query=',
-              'tutoriales':'https://es.wikihow.com/',
-              'diccionario':'https://dle.rae.es/',
-              'wikipedia':'https://es.wikipedia.org/wiki/',
-              'google':'https://www.google.com/search?q=',
-              'cursos':'https://codigofacilito.com/cursos?utf8=%E2%9C%93&search%5Bkeyword%5D=',
-              'papers':'https://ieeexplore.ieee.org/search/searchresult.jsp?newsearch=true&queryText='}
+        
         
         if isinstance(other,Numero):
-            webbrowser.open(webs[other.valor]+ str(self.valor))
-            return Numero(1),None 
+            
+            return Numero(0),None 
         else:
             return None, self.Operacion_ilegal(other)
+    
+    def preguntar_chatGPT(self,other):
+        
+        if isinstance(other,Numero):
+           
+            return Numero(0),None 
+        else:
+            return None, self.Operacion_ilegal(other)
+    
     
     def traducir(self,other):
         
@@ -559,12 +569,17 @@ class Texto(ValorNumerico):
         return copia
     
     def traducir(self,other):
-        translator = Translator()
+        chatbot=gpt.ChatGPT('AZURE_OPENAI_ENDPOINT','cf-hackathon','2024-02-01','AZURE_OPENAI_API_KEY')
+        cliente=chatbot.inicio()
+        print(f"{self.valor} , este es un sistema de traduccion inteligente, gracias a tu asistente de confianza")
+        trad=True
+        chatbot.consulta(cliente=cliente,rol="Traduccion de idiomas a "+ other.valor,trad=trad)
+        
         if isinstance(other,Texto):
-            return Texto(f"Traduccion: '{self.valor}' --> '{translator.translate(self.valor,dest=other.valor).text}'"),None
+            return Texto(f"Traduccion exitosa"),None
         else:
             return None, self.Operacion_ilegal(other)
-    
+                 
     def navegar(self,other):
         webs={'videos':'https://www.youtube.com/results?search_query=',
               'tutoriales':'https://es.wikihow.com/',
@@ -578,6 +593,39 @@ class Texto(ValorNumerico):
             return Texto(f"Busqueda: '{self.valor}' realizada con exito en '{other.valor}'"),None 
         else:
             return None, self.Operacion_ilegal(other)
+        
+    def preguntar_chatGPT(self,other):
+       
+        if isinstance(other,Texto):
+            print(f"{self.valor} , estos son algunos temas en los que puedes preguntar a {other.valor}, tu asistente confiable:")
+            print("1. Tecnología y Programación")
+            print("2. Matemáticas")
+            print("3. Idiomas")
+            print("4. Geografía")
+            print("5. Historia")
+            print("6. Ciencia")
+            print("7. Salud y Bienestar")
+            print("8. Economía y Finanzas")
+            print('9. Otro')
+            print("10. Salir")
+            chatbot=gpt.ChatGPT('AZURE_OPENAI_ENDPOINT','cf-hackathon','2024-02-01','AZURE_OPENAI_API_KEY')
+            cliente=chatbot.inicio()
+            while True:
+                opcion = int(input('Por favor, ingrese la opcion digitando unicamente el número: '))
+                if opcion==1:chatbot.consulta(cliente=cliente,rol="Tecnología y Programación")
+                elif opcion==2: chatbot.consulta(cliente=cliente,rol="Matemáticas")
+                elif opcion==3: chatbot.consulta(cliente=cliente,rol="Idiomas")
+                elif opcion==4: chatbot.consulta(cliente=cliente,rol="Geografía")
+                elif opcion==5: chatbot.consulta(cliente=cliente,rol="Historia")
+                elif opcion==6: chatbot.consulta(cliente=cliente,rol="Ciencia")
+                elif opcion==7: chatbot.consulta(cliente=cliente,rol="Salud y Bienestar")
+                elif opcion==8: chatbot.consulta(cliente=cliente,rol="Economía y Finanzas")
+                elif opcion==9: chatbot.consulta(cliente=cliente)
+                elif opcion==10: break              
+                    
+            return Texto(f"{self.valor}, realizaste tu consulta exitosamente en'{other.valor}'"),None 
+        else:
+            return None, self.Operacion_ilegal(other)    
     
    
       

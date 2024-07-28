@@ -219,7 +219,7 @@ class parsear:
     
     def termino(self):
         
-        return self.op_binar(self.factor,(Lexador.t_POR,Lexador.t_ENTRE,Lexador.t_REST,Lexador.t_PARTICION, Lexador.t_NAVEGAR,Lexador.t_TRADUCIR))    
+        return self.op_binar(self.factor,(Lexador.t_POR,Lexador.t_ENTRE,Lexador.t_REST,Lexador.t_PARTICION, Lexador.t_NAVEGAR,Lexador.t_TRADUCIR,Lexador.t_PREGUNTAR))    
     def op_binar(self,func_A,ops,func_B=None):
         if func_B==None:
             func_B=func_A

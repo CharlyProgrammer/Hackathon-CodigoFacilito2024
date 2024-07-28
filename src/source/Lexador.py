@@ -96,6 +96,7 @@ t_MENOR_IGUAL='MENOR_IGUAL'
 t_NAVEGAR='NAVEGAR'
 t_COMMA='COMMA'
 t_GUION='GUION'
+t_PREGUNTAR='PREGUNTAR'
 t_TRADUCIR='TRADUCIR'
 t_GRADIENTE_COMB='GRADIENTE_COMB'
 t_FLECHA_DER='FLECHA_DER'
@@ -205,6 +206,7 @@ class AnalizadorLexico:
         elif var_str=='navegar': return Token(t_NAVEGAR,'navegar',self.pos.lin+1,pos_ini,self.pos,self.linea)
         elif var_str=='traducir': return Token(t_TRADUCIR,'traducir',self.pos.lin+1,pos_ini,self.pos,self.linea)
         elif var_str=='gradiente-comb': return Token(t_GRADIENTE_COMB,'gradiente-comb',self.pos.lin+1,pos_ini,self.pos,self.linea)
+        elif var_str=='preguntar-ai-experta': return Token(t_PREGUNTAR,'preguntar-ai-experta',self.pos.lin+1,pos_ini,self.pos,self.linea)
       
         else:
             return Token(tipo_tok,var_str,self.pos.lin+1,pos_ini,self.pos,self.linea)  
